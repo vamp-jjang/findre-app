@@ -133,13 +133,13 @@ class SignUpScreen extends StatelessWidget {
                     onPressed: () {
                       // TODO: Implement Apple sign in
                     },
-                    icon: '',
+                    icon: 'Apple',
                   ),
                   _SocialButton(
                     onPressed: () {
                       // TODO: Implement Facebook sign in
                     },
-                    icon: 'f',
+                    icon: 'Facebook',
                   ),
                 ],
               ),
