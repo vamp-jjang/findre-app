@@ -139,7 +139,7 @@ class SignUpScreen extends StatelessWidget {
                     onPressed: () {
                       // TODO: Implement Facebook sign in
                     },
-                    icon: 'Facebook',
+                    icon: 'F',
                   ),
                 ],
               ),
