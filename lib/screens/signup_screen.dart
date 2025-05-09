@@ -1,8 +1,21 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'password_setup_screen.dart';
-class SignUpScreen extends StatelessWidget {
+class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
+
+  @override
+  State<SignUpScreen> createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
+  final _emailController = TextEditingController();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,6 +88,7 @@ class SignUpScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               TextField(
+                controller: _emailController,
                 decoration: InputDecoration(
                   labelText: 'EMAIL',
                   border: OutlineInputBorder(
@@ -87,12 +101,16 @@ class SignUpScreen extends StatelessWidget {
               // Next button
               ElevatedButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const PasswordSetupScreen(),
-                    ),
-                  );
+                  if (_emailController.text.isNotEmpty) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PasswordSetupScreen(
+                          email: _emailController.text,
+                        ),
+                      ),
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.grey,

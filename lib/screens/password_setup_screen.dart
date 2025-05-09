@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'verification_screen.dart';
 
 class PasswordSetupScreen extends StatefulWidget {
-  const PasswordSetupScreen({super.key});
+  final String email;
+
+  const PasswordSetupScreen({super.key, required this.email});
 
   @override
   State<PasswordSetupScreen> createState() => _PasswordSetupScreenState();
@@ -105,10 +108,16 @@ class _PasswordSetupScreenState extends State<PasswordSetupScreen> {
               // Next button
               ElevatedButton(
                 onPressed: () {
-                  // TODO: Implement password validation and next step
                   if (_passwordController.text.isNotEmpty &&
                       _passwordController.text == _confirmPasswordController.text) {
-                    // Proceed to next step
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => VerificationScreen(
+                          email: widget.email,
+                        ),
+                      ),
+                    );
                   }
                 },
                 style: ElevatedButton.styleFrom(
