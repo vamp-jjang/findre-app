@@ -127,7 +127,7 @@ class SignUpScreen extends StatelessWidget {
                     onPressed: () {
                       // TODO: Implement Google sign in
                     },
-                    icon: 'G',
+                    icon: 'Google',
                   ),
                   _SocialButton(
                     onPressed: () {
