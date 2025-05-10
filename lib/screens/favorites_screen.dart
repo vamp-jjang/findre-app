@@ -12,7 +12,9 @@ class FavoritesScreen extends StatelessWidget {
             // Top navigation tabs
             Container(
               padding: const EdgeInsets.all(16),
-              child: Row(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
                 children: [
                   const Text(
                     'Saved',
@@ -59,6 +61,7 @@ class FavoritesScreen extends StatelessWidget {
                     ),
                   ),
                 ],
+              ),
               ),
             ),
             // Empty state content
