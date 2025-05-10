@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:real_estate/screens/signup_screen.dart';
-
 import 'login_screen.dart';
+import '../auth_services.dart';
 
 class WelcomeScreen extends StatelessWidget {
-  const WelcomeScreen({super.key});
-
+          WelcomeScreen({super.key});
+final AuthService firebaseAuth = AuthService();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -97,9 +97,17 @@ class WelcomeScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              // Skip for now
+              // Skip for now or anon signin
               TextButton(
-                onPressed: () {},
+                onPressed: () async{
+                  dynamic result = await firebaseAuth.signInAnon();
+                  if(result == null){
+                    print('error signing in');
+                  }else{
+                    print('signed in');
+                    print(result.uid);
+                  }
+                },
                 child: const Text(
                   'Skip for now',
                   style: TextStyle(

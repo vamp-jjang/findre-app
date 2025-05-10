@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'models/user.dart';
 
 ValueNotifier<AuthService> authService = ValueNotifier(AuthService());
 
@@ -59,11 +60,18 @@ class AuthService {
       await currentUser!.reauthenticateWithCredential(credential);
       await currentUser!.updatePassword(newPassword);
   }
-  Future<void> signInAnon() async {
+  //create a user object based on the firebase user
+  myUser? _userfromFirebase(User user) {
+    return user != null ? myUser(uid: user.uid) : null;
+  }
+  Future signInAnon() async {
     try {
-      await firebaseAuth.signInAnonymously();
+      UserCredential result = await firebaseAuth.signInAnonymously();
+      User? user = result.user;
+      return _userfromFirebase(user!);
     } catch (e) {
-      print(e);
+      print(e.toString());
+      return null;
     }
   }
 }

@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.white,
         fontFamily: 'Roboto',
       ),
-      home: const WelcomeScreen(),
+      home: WelcomeScreen(),
     );
   }
 }
