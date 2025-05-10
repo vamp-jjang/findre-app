@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'account_settings_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -50,7 +51,12 @@ class ProfileScreen extends StatelessWidget {
                   // Settings icon
                   IconButton(
                     icon: const Icon(Icons.settings),
-                    onPressed: () {},
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AccountSettingsScreen(),
+                      ),
+                    ),
                   ),
                 ],
               ),
