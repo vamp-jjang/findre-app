@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:real_estate/screens/home_screen.dart';
 import 'package:real_estate/screens/signup_screen.dart';
 import 'login_screen.dart';
 import '../auth_services.dart';
@@ -106,6 +107,12 @@ final AuthService firebaseAuth = AuthService();
                   }else{
                     print('signed in');
                     print(result.uid);
+                        Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const HomeScreen(),
+                        ),
+                      );
                   }
                 },
                 child: const Text(

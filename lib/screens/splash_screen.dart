@@ -53,7 +53,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
               opacity: _animation,
               child: Image.asset(
                 'assets/icons/findre_tm.png',
-                height: 120,
+                height: 65,
                 fit: BoxFit.contain,
               ),
             ),

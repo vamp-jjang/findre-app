@@ -32,7 +32,9 @@ String errorMessage = '';
     );
       popPage();
     } on FirebaseAuthException catch(e){
-      print(e.message);
+      setState(() {
+        errorMessage = e.message ?? 'There is an error';
+      });
     }
   }
       void popPage(){

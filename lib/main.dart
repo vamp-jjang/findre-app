@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:real_estate/bg_animated/routes.dart';
 import 'firebase_options.dart';
-import 'screens/welcome_screen.dart';
+import 'screens/splash_screen.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,7 +25,9 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: const Color.fromARGB(255, 255, 255, 255),
         fontFamily: 'Roboto',
       ),
-      home: WelcomeScreen(),
+      initialRoute: '/',
+      onGenerateRoute: RouteGenerator.generateRoute,
+      home: const SplashScreen(),
     );
   }
 }
