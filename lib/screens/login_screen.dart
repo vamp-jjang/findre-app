@@ -47,15 +47,11 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Logo
-              Text(
-                'findRE',
-                style: TextStyle(
-                  color: Colors.red[400],
-                  fontSize: 48,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
+                  Image.asset(
+                    'assets/icons/findre_tm.png',
+                    height: 48,
+                    fit: BoxFit.contain,
+                  ),
               const SizedBox(height: 24),
               // Don't have an account text
               Row(

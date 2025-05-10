@@ -17,13 +17,10 @@ class WelcomeScreen extends StatelessWidget {
             children: [
               const Spacer(),
               // Logo
-              Text(
-                'findRE',
-                style: TextStyle(
-                  color: Colors.red[400],
-                  fontSize: 48,
-                  fontWeight: FontWeight.bold,
-                ),
+              Image.asset(
+                'assets/icons/findre_tm.png',
+                height: 48,
+                fit: BoxFit.contain,
               ),
               const SizedBox(height: 8),
               // Tagline

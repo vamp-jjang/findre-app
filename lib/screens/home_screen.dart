@@ -69,14 +69,11 @@ class _HomeScreenState extends State<HomeScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'findRE',
-                    style: TextStyle(
-                      color: Colors.red[400],
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
+                    Image.asset(
+                      'assets/icons/findre_tm.png',
+                      height: 48,
+                      fit: BoxFit.contain,
                     ),
-                  ),
                   const CircleAvatar(
                     backgroundColor: Colors.grey,
                     child: Icon(Icons.person, color: Colors.white),
