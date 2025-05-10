@@ -59,4 +59,11 @@ class AuthService {
       await currentUser!.reauthenticateWithCredential(credential);
       await currentUser!.updatePassword(newPassword);
   }
+  Future<void> signInAnon() async {
+    try {
+      await firebaseAuth.signInAnonymously();
+    } catch (e) {
+      print(e);
+    }
+  }
 }
