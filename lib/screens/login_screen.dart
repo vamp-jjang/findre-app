@@ -205,19 +205,19 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: () {
                       // TODO: Implement Google sign in
                     },
-                    icon: 'G',
+                    icon: 'Google',
                   ),
                   _SocialButton(
                     onPressed: () {
                       // TODO: Implement Apple sign in
                     },
-                    icon: '',
+                    icon: 'Apple',
                   ),
                   _SocialButton(
                     onPressed: () {
                       // TODO: Implement Facebook sign in
                     },
-                    icon: 'f',
+                    icon: 'Facebook',
                   ),
                 ],
               ),
@@ -250,13 +250,31 @@ class _SocialButton extends StatelessWidget {
         side: const BorderSide(color: Colors.grey),
         minimumSize: const Size(90, 45),
       ),
-      child: Text(
-        icon,
-        style: const TextStyle(
-          color: Colors.black,
-          fontSize: 20,
-        ),
-      ),
+      child: icon == 'Google'
+          ? Image.asset(
+              'assets/icons/google.png',
+              height: 24,
+              width: 24,
+            )
+          : icon == 'Apple'
+              ? Image.asset(
+                  'assets/icons/apple.png',
+                  height: 24,
+                  width: 24,
+                )
+          : icon == 'Facebook'
+              ? Image.asset(
+                  'assets/icons/facebook.png',
+                  height: 24,
+                  width: 24,
+                )
+              : Text(
+                  icon,
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 20,
+                  ),
+                ),
     );
   }
 }

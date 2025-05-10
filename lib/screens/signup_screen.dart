@@ -153,7 +153,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     onPressed: () {
                       // TODO: Implement Facebook sign in
                     },
-                    icon: 'F',
+                    icon: 'Facebook',
                   ),
                 ],
               ),
@@ -197,7 +197,7 @@ class _SocialButton extends StatelessWidget {
                   height: 24,
                   width: 24,
                 )
-          : icon == 'F'
+          : icon == 'Facebook'
               ? Image.asset(
                   'assets/icons/facebook.png',
                   height: 24,
