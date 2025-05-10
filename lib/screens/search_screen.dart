@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
 
@@ -13,8 +14,8 @@ class _SearchScreenState extends State<SearchScreen> {
   bool _isListView = false;
 
   static const CameraPosition _initialPosition = CameraPosition(
-    target: LatLng(10.3157, 123.8854), // Default to Carmen, Cebu coordinates
-    zoom: 12,
+    target: LatLng(9.814062304659195, 124.1764920905616), // Default to Carmen, Bohol coordinates
+    zoom: 14,
   );
 
   @override
