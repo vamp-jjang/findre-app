@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'password_setup_screen.dart';
+import '../auth_services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
 
@@ -9,14 +11,33 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  final _emailController = TextEditingController();
+  TextEditingController controllerEmail = TextEditingController();
+  TextEditingController controllerPassword = TextEditingController();
+final formKey = GlobalKey<FormState>();
+String errorMessage = '';
 
   @override
   void dispose() {
-    _emailController.dispose();
+    controllerEmail.dispose();
+    controllerPassword.dispose();
     super.dispose();
   }
-
+  void register() async{
+    try{
+      await authService.value.createAccount(
+      email: controllerEmail.text,
+      password: controllerPassword.text,
+      firstName: '',
+      lastName: '',
+    );
+      popPage();
+    } on FirebaseAuthException catch(e){
+      print(e.message);
+    }
+  }
+      void popPage(){
+      Navigator.pop(context);
+    }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -84,7 +105,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
               const SizedBox(height: 16),
               TextField(
-                controller: _emailController,
+                controller: controllerEmail,
                 decoration: InputDecoration(
                   labelText: 'EMAIL',
                   border: OutlineInputBorder(
@@ -97,12 +118,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
               // Next button
               ElevatedButton(
                 onPressed: () {
-                  if (_emailController.text.isNotEmpty) {
+                  if (controllerEmail.text.isNotEmpty) {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => PasswordSetupScreen(
-                          email: _emailController.text,
+                          email: controllerEmail.text,
                         ),
                       ),
                     );
