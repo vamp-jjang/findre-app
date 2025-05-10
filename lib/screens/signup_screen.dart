@@ -117,7 +117,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
                 child: const Text(
                   'Next',
-                  style: TextStyle(fontSize: 16),
+                  style: TextStyle(fontSize: 16,color: Colors.white),
+                  
                 ),
               ),
               const SizedBox(height: 24),
