@@ -133,7 +133,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                 ),
                 child: const Text(
                   'Create Account',
-                  style: TextStyle(fontSize: 16),
+                  style: TextStyle(fontSize: 16,color: Colors.white),
                 ),
               ),
             ],
