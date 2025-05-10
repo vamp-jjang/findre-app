@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
       title: 'FindRE',
       theme: ThemeData(
         primarySwatch: Colors.red,
-        scaffoldBackgroundColor: Colors.white,
+        scaffoldBackgroundColor: const Color.fromARGB(255, 255, 255, 255),
         fontFamily: 'Roboto',
       ),
       home: WelcomeScreen(),
