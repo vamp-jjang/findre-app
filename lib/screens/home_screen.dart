@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'search_screen.dart';
-import'favorites_screen.dart';
+import 'favorites_screen.dart';
+import 'profile_screen.dart';
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -23,7 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _buildHomeContent(),
       const SearchScreen(),
       const FavoritesScreen(),
-      const Center(child: Text('Profile')),
+      const ProfileScreen(),
     ];
 
     return Scaffold(
