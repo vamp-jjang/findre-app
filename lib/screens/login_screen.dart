@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:real_estate/auth_services.dart';
 import 'signup_screen.dart';
 import 'home_screen.dart';
 
@@ -10,17 +11,19 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
+
 class _LoginScreenState extends State<LoginScreen> {
+  final _auth = AuthService();
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _email = TextEditingController();
+  final _password = TextEditingController();
   bool _isLoading = false;
   bool _passwordVisible = false;
 
   @override
   void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
+    _email.dispose();
+    _password.dispose();
     super.dispose();
   }
 
@@ -75,7 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 32),
               // Email field
               TextFormField(
-                controller: _emailController,
+                controller: _email,
                 keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
                   labelText: 'EMAIL',
@@ -96,7 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 16),
               // Password field
               TextFormField(
-                controller: _passwordController,
+                controller: _password,
                 obscureText: !_passwordVisible,
                 decoration: InputDecoration(
                   labelText: 'PASSWORD',
@@ -148,19 +151,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           // Simulate login delay
                           await Future.delayed(const Duration(seconds: 2));
                           
-                          // TODO: Implement actual login logic here
+                          _login(); // TODO: Implement actual login logic here
                           
                           if (mounted) {
                             setState(() {
                               _isLoading = false;
                             });
                             
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const HomeScreen(),
-                              ),
-                            );
                           }
                         }
                       },
@@ -228,6 +225,13 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       ),
     );
+  }
+  _login() async{
+    final user = await _auth.signInAccount(
+      email: _email.text, password: _password.text);
+    if(user != null){
+      Navigator.push(context, MaterialPageRoute(builder: (context)=> const HomeScreen()));
+    }
   }
 }
 

@@ -5,34 +5,49 @@ import 'models/user.dart';
 ValueNotifier<AuthService> authService = ValueNotifier(AuthService());
 
 class AuthService {
-  final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  User? get currentUser => firebaseAuth.currentUser;
+  User? get currentUser => _auth.currentUser;
 
-  Stream<User?> get authState => firebaseAuth.authStateChanges();
+  Stream<User?> get authState => _auth.authStateChanges();
 
-  Future<UserCredential> signIn({
+  Future<User?> signInAccount({
     required email,
     required String password,
     }) async {
-    return await firebaseAuth.signInWithEmailAndPassword(
+      try {
+            final cred = await _auth.signInWithEmailAndPassword(
       email: email, password: password);
+      return cred.user;
+      } catch (e) {
+        print("Something went wrong");
+      }
+      return null;
   }
-  Future<UserCredential> createAccount({
-    required String username,
+  Future<User?> createAccount({
     required email,
     required String password,
     }) async {
-    return await firebaseAuth.createUserWithEmailAndPassword(
+      try {
+            final cred = await _auth.createUserWithEmailAndPassword(
       email: email, password: password);
+      return cred.user;
+      } catch (e) {
+        print("Something went wrong");
+      }
+      return null;
   }
   Future<void> signOut() async {
-    await firebaseAuth.signOut();
+    try {
+      await _auth.signOut();
+    } catch (e) {
+      print("Something went wrong");
+    }
   }
   Future<void> resetPassword({
     required String email,
   }) async {
-    await firebaseAuth.sendPasswordResetEmail(email: email);
+    await _auth.sendPasswordResetEmail(email: email);
   }
   Future<void> updateUsername({
     required String username,
@@ -47,7 +62,7 @@ class AuthService {
       EmailAuthProvider.credential(email: email, password: password);
       await currentUser!.reauthenticateWithCredential(credential);
       await currentUser!.delete(); 
-      await firebaseAuth.signOut();
+      await _auth.signOut();
   }
   Future<void> resetPasswordFromCurrentPassword({
     required String currentpassword,
@@ -66,11 +81,11 @@ class AuthService {
   }
   //auth change user stream
   Stream<myUser?> get user {
-    return firebaseAuth.authStateChanges().map((User? user) => _userfromFirebase(user!));
+    return _auth.authStateChanges().map((User? user) => _userfromFirebase(user!));
   }
   Future signInAnon() async {
     try {
-      UserCredential result = await firebaseAuth.signInAnonymously();
+      UserCredential result = await _auth.signInAnonymously();
       User? user = result.user;
       return _userfromFirebase(user!);
     } catch (e) {

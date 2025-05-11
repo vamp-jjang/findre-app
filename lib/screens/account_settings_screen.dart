@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:real_estate/auth_services.dart';
+import 'login_screen.dart';
+
 
 class AccountSettingsScreen extends StatelessWidget {
   const AccountSettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final _auth = AuthService();
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -88,7 +92,14 @@ class AccountSettingsScreen extends StatelessWidget {
           ListTile(
             title: const Text('Log Out'),
             trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
-            onTap: () {},
+            onTap: () async{
+              await _auth.signOut();
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                (route) => false,
+              );
+            },
           ),
           ListTile(
             title: Text(

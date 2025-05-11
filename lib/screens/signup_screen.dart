@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:real_estate/screens/home_screen.dart';
 import 'login_screen.dart';
-import 'verification_screen.dart';
 import '../auth_services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 class SignUpScreen extends StatefulWidget {
@@ -11,26 +11,26 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  TextEditingController controllerUsername = TextEditingController();
-  TextEditingController controllerEmail = TextEditingController();
-  TextEditingController controllerPassword = TextEditingController();
+  final _auth = AuthService();
+  final _username = TextEditingController();
+  final _email = TextEditingController();
+  final _password = TextEditingController();
   bool _passwordVisible = false;
 final formKey = GlobalKey<FormState>();
 String errorMessage = '';
 
   @override
   void dispose() {
-    controllerUsername.dispose();
-    controllerEmail.dispose();
-    controllerPassword.dispose();
+    _username.dispose();
+    _email.dispose();
+    _password.dispose();
     super.dispose();
   }
   void register() async{
     try{
       await authService.value.createAccount(
-      email: controllerEmail.text,
-      password: controllerPassword.text,
-      username: controllerUsername.text,
+      email: _email.text,
+      password: _password.text,
     );
       popPage();
     } on FirebaseAuthException catch(e){
@@ -42,6 +42,7 @@ String errorMessage = '';
       void popPage(){
       Navigator.pop(context);
     }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -91,7 +92,7 @@ String errorMessage = '';
               const SizedBox(height: 32),
               // Form fields
               TextField(
-                controller: controllerUsername,
+                controller: _username,
                 decoration: InputDecoration(
                   labelText: 'USERNAME',
                   border: OutlineInputBorder(
@@ -101,7 +102,7 @@ String errorMessage = '';
               ),
               const SizedBox(height: 16),
               TextField(
-                controller: controllerEmail,
+                controller: _email,
                 decoration: InputDecoration(
                   labelText: 'EMAIL',
                   border: OutlineInputBorder(
@@ -112,7 +113,7 @@ String errorMessage = '';
               ),
               const SizedBox(height: 16),
               TextField(
-                controller: controllerPassword,
+                controller: _password,
                 obscureText: !_passwordVisible,
                 decoration: InputDecoration(
                   labelText: 'PASSWORD',
@@ -135,20 +136,7 @@ String errorMessage = '';
               const SizedBox(height: 24),
               // Next button
               ElevatedButton(
-                onPressed: () {
-                  if (controllerEmail.text.isNotEmpty && 
-                      controllerPassword.text.isNotEmpty && 
-                      controllerUsername.text.isNotEmpty) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => VerificationScreen(
-                          email: controllerEmail.text,
-                        ),
-                      ),
-                    );
-                  }
-                },
+                onPressed: _signup,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.grey,
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -204,6 +192,21 @@ String errorMessage = '';
         ),
       ),
     );
+  }
+    void _signup() async{
+   final user = await _auth.createAccount(
+      email: _email.text,
+      password: _password.text,
+    );
+    if(user != null){
+      print('User created');
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HomeScreen(),
+        ),
+      );
+    }
   }
 }
 
