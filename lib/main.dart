@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:real_estate/screens/welcome_screen.dart';
+import 'package:real_estate/wrapper.dart';
 import 'firebase_options.dart';
 
 void main() async{
@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: const Color.fromARGB(255, 255, 255, 255),
         fontFamily: 'Roboto',
       ),
-      home: WelcomeScreen(),
+      home: Wrapper(),
     );
   }
 }

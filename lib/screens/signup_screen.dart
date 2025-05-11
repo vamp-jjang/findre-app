@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:real_estate/screens/home_screen.dart';
 import 'login_screen.dart';
 import '../auth_services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -203,11 +202,11 @@ String errorMessage = '';
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => HomeScreen(),
+          builder: (context) => LoginScreen(),
         ),
       );
     }
-  }
+  } 
 }
 
 class _SocialButton extends StatelessWidget {

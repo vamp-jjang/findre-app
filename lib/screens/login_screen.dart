@@ -152,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           await Future.delayed(const Duration(seconds: 2));
                           
                           _login(); // TODO: Implement actual login logic here
-                          
+                          print('signed in successfully');
                           if (mounted) {
                             setState(() {
                               _isLoading = false;
@@ -200,8 +200,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   _SocialButton(
-                    onPressed: () {
+                    onPressed: () async{
                       // TODO: Implement Google sign in
+                      await _auth.loginWithGoogle();
                     },
                     icon: 'Google',
                   ),
@@ -226,7 +227,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-  _login() async{
+		  _login() async{
     final user = await _auth.signInAccount(
       email: _email.text, password: _password.text);
     if(user != null){

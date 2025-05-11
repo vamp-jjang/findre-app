@@ -94,11 +94,11 @@ class AccountSettingsScreen extends StatelessWidget {
             trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
             onTap: () async{
               await _auth.signOut();
-              Navigator.pushAndRemoveUntil(
+                            Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(builder: (context) => const LoginScreen()),
                 (route) => false,
-              );
+              ); 
             },
           ),
           ListTile(
