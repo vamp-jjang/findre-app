@@ -17,7 +17,7 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  late GoogleMapController _mapController;
+  
   bool _isListView = false;
   Position? _currentPosition;
   Set<Marker> _markers = {};
@@ -267,7 +267,7 @@ class _SearchScreenState extends State<SearchScreen> {
           GoogleMap(
             initialCameraPosition: _initialPosition,
             onMapCreated: (GoogleMapController controller) {
-              _mapController = controller;
+            
             },
             myLocationButtonEnabled: true,
             myLocationEnabled: true,
