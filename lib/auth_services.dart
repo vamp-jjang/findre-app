@@ -19,8 +19,7 @@ class AuthService {
       email: email, password: password);
   }
   Future<UserCredential> createAccount({
-    required String firstName,
-    required String lastName,
+    required String username,
     required email,
     required String password,
     }) async {

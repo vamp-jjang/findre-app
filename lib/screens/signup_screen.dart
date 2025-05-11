@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
-import 'password_setup_screen.dart';
+import 'verification_screen.dart';
 import '../auth_services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 class SignUpScreen extends StatefulWidget {
@@ -11,13 +11,16 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
+  TextEditingController controllerUsername = TextEditingController();
   TextEditingController controllerEmail = TextEditingController();
   TextEditingController controllerPassword = TextEditingController();
+  bool _passwordVisible = false;
 final formKey = GlobalKey<FormState>();
 String errorMessage = '';
 
   @override
   void dispose() {
+    controllerUsername.dispose();
     controllerEmail.dispose();
     controllerPassword.dispose();
     super.dispose();
@@ -27,8 +30,7 @@ String errorMessage = '';
       await authService.value.createAccount(
       email: controllerEmail.text,
       password: controllerPassword.text,
-      firstName: '',
-      lastName: '',
+      username: controllerUsername.text,
     );
       popPage();
     } on FirebaseAuthException catch(e){
@@ -89,17 +91,9 @@ String errorMessage = '';
               const SizedBox(height: 32),
               // Form fields
               TextField(
+                controller: controllerUsername,
                 decoration: InputDecoration(
-                  labelText: 'FIRST NAME',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                decoration: InputDecoration(
-                  labelText: 'LAST NAME',
+                  labelText: 'USERNAME',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -116,15 +110,39 @@ String errorMessage = '';
                 ),
                 keyboardType: TextInputType.emailAddress,
               ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controllerPassword,
+                obscureText: !_passwordVisible,
+                decoration: InputDecoration(
+                  labelText: 'PASSWORD',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _passwordVisible ? Icons.visibility : Icons.visibility_off,
+                      color: Colors.grey,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _passwordVisible = !_passwordVisible;
+                      });
+                    },
+                  ),
+                ),
+              ),
               const SizedBox(height: 24),
               // Next button
               ElevatedButton(
                 onPressed: () {
-                  if (controllerEmail.text.isNotEmpty) {
+                  if (controllerEmail.text.isNotEmpty && 
+                      controllerPassword.text.isNotEmpty && 
+                      controllerUsername.text.isNotEmpty) {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => PasswordSetupScreen(
+                        builder: (context) => VerificationScreen(
                           email: controllerEmail.text,
                         ),
                       ),
