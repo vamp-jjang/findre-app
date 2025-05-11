@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'account_settings_screen.dart';
+import 'find_agent_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -76,7 +77,12 @@ class ProfileScreen extends StatelessWidget {
                   style: TextStyle(fontWeight: FontWeight.w500),
                 ),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () {},
+                onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const FindAgentScreen(),
+                ),
+              ),
               ),
             ),
             const Divider(height: 1),
@@ -84,28 +90,48 @@ class ProfileScreen extends StatelessWidget {
             ListTile(
               leading: const Icon(Icons.notifications_outlined),
               title: const Text('Notifications'),
-              onTap: () {},
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const FindAgentScreen(),
+                ),
+              ),
             ),
             const Divider(height: 1),
             // Share the App
             ListTile(
               leading: const Icon(Icons.share_outlined),
               title: const Text('Share the App'),
-              onTap: () {},
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const FindAgentScreen(),
+                ),
+              ),
             ),
             const Divider(height: 1),
             // Legal
             ListTile(
               leading: const Icon(Icons.gavel_outlined),
               title: const Text('Legal'),
-              onTap: () {},
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const FindAgentScreen(),
+                ),
+              ),
             ),
             const Divider(height: 1),
             // Language
             ListTile(
               leading: const Icon(Icons.language_outlined),
               title: const Text('Language'),
-              onTap: () {},
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const FindAgentScreen(),
+                ),
+              ),
             ),
             const Divider(height: 1),
           ],
