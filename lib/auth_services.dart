@@ -62,6 +62,7 @@ class AuthService {
   }
   //create a user object based on the firebase user
   myUser? _userfromFirebase(User user) {
+    // ignore: unnecessary_null_comparison
     return user != null ? myUser(uid: user.uid) : null;
   }
   //auth change user stream

@@ -90,36 +90,21 @@ class ProfileScreen extends StatelessWidget {
             ListTile(
               leading: const Icon(Icons.notifications_outlined),
               title: const Text('Notifications'),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const FindAgentScreen(),
-                ),
-              ),
+              onTap: (){},
             ),
             const Divider(height: 1),
             // Share the App
             ListTile(
               leading: const Icon(Icons.share_outlined),
               title: const Text('Share the App'),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const FindAgentScreen(),
-                ),
-              ),
+              onTap: (){},
             ),
             const Divider(height: 1),
             // Legal
             ListTile(
               leading: const Icon(Icons.gavel_outlined),
               title: const Text('Legal'),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const FindAgentScreen(),
-                ),
-              ),
+              onTap: (){},
             ),
             const Divider(height: 1),
             // Language

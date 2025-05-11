@@ -154,7 +154,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SearchScreen(),
+                      ),
+                    ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
                         foregroundColor: Colors.white,

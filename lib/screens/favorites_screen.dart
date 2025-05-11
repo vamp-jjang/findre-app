@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:real_estate/screens/search_screen.dart';
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
@@ -94,9 +95,12 @@ class FavoritesScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(
-                      onPressed: () {
-                        // Navigate to search screen
-                      },
+                      onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SearchScreen(),
+                      ),
+                    ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
                         padding: const EdgeInsets.symmetric(

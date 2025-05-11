@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:google_directions_api/google_directions_api.dart' as directions_api;
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+// For decoding polyline
 
+
+const String GOOGLE_MAPS_API_KEY = "AIzaSyDZuK3iJMP6qCiPf-MzsGVK7e5XEDPWW58";
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -19,11 +24,34 @@ class _SearchScreenState extends State<SearchScreen> {
   Set<Polyline> _polylines = {};
   final _markerId = const MarkerId('current_location');
   final _polylineId = const PolylineId('route');
+  directions_api.DirectionsService? _directionsService;
+  PolylinePoints _polylinePoints = PolylinePoints();
 
   @override
   void initState() {
     super.initState();
     _requestLocationPermission();
+    if (GOOGLE_MAPS_API_KEY == "YOUR_GOOGLE_MAPS_API_KEY") {
+      // Show a dialog or toast to remind the user to add their API key
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('API Key Required'),
+            content: const Text('Please replace "YOUR_GOOGLE_MAPS_API_KEY" in search_screen.dart with your actual Google Maps API key to enable route functionality.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      });
+    } else {
+      directions_api.DirectionsService.init(GOOGLE_MAPS_API_KEY);
+      _directionsService = directions_api.DirectionsService();
+    }
   }
 
   Future<void> _requestLocationPermission() async {
@@ -129,24 +157,98 @@ class _SearchScreenState extends State<SearchScreen> {
         infoWindow: const InfoWindow(title: 'Your Location'),
       );
       setState(() {
-        _markers = {marker};
+        // Preserve existing property markers
+        _markers = _markers.where((m) => m.markerId != _markerId).toSet();
+        _markers.add(marker);
       });
     }
   }
 
-  void _drawPolyline(LatLng destination) {
-    if (_currentPosition != null) {
-      final polyline = Polyline(
-        polylineId: _polylineId,
-        color: Colors.blue,
-        width: 5,
-        points: [
-          LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-          destination,
-        ],
+  Future<void> _drawPolyline(LatLng destination) async {
+    if (_currentPosition == null || _directionsService == null) {
+      print('Current position or directions service not available.');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not draw route. Ensure location is enabled and API key is set.'),
+          duration: Duration(seconds: 3),
+        ),
       );
-      setState(() {
-        _polylines = {polyline};
+      return;
+    }
+
+    final request = directions_api.DirectionsRequest(
+      origin: '${_currentPosition!.latitude},${_currentPosition!.longitude}',
+      destination: '${destination.latitude},${destination.longitude}',
+      travelMode: directions_api.TravelMode.driving,
+    );
+
+    try {
+      await _directionsService!.route(request, (result, status) {
+        if (!mounted) return; 
+        if (status == directions_api.DirectionsStatus.ok && result.routes != null && result.routes!.isNotEmpty) {
+          final route = result.routes!.first;
+          if (route.overviewPolyline != null && route.overviewPolyline!.points != null) {
+            List<PointLatLng> decodedPoints = _polylinePoints.decodePolyline(route.overviewPolyline!.points!);
+            List<LatLng> polylineCoordinates = decodedPoints.map((point) => LatLng(point.latitude, point.longitude)).toList();
+
+            if (polylineCoordinates.isNotEmpty) {
+              final polyline = Polyline(
+                polylineId: _polylineId,
+                color: const Color.fromARGB(255, 236, 8, 8),
+                width: 5,
+                points: polylineCoordinates,
+              );
+              if (!mounted) return;
+              setState(() {
+                _polylines = {polyline};
+              });
+            } else {
+              print('No coordinates found for polyline');
+               if (!mounted) return;
+               ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Could not decode route points.'),
+                  duration: Duration(seconds: 3),
+                ),
+              );
+            }
+          } else {
+            print('Overview polyline or points are null');
+             if (!mounted) return;
+             ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Could not retrieve route details.'),
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+        } else {
+          print('Directions request failed with status: $status');
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error fetching directions: ${status.toString().split(".").last}'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+          setState(() {
+            _polylines.clear(); // Clear previous polylines on error
+          });
+        }
+      });
+    } catch (e) {
+      print('Error calling directions API: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('An error occurred while fetching directions.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+       if (!mounted) return;
+       setState(() {
+        _polylines.clear(); // Clear previous polylines on error
       });
     }
   }
@@ -178,10 +280,13 @@ class _SearchScreenState extends State<SearchScreen> {
                 markerId: MarkerId('property_${position.latitude}_${position.longitude}'),
                 position: position,
                 infoWindow: const InfoWindow(title: 'Selected Property'),
-                onTap: () => _drawPolyline(position),
+                onTap: () => _drawPolyline(position), // Call _drawPolyline here as well if needed when tapping existing marker
               );
               setState(() {
-                _markers = {propertyMarker, ..._markers};
+                // Add new property marker, keep existing current location marker
+                Set<Marker> newMarkers = _markers.where((m) => m.markerId == _markerId).toSet();
+                newMarkers.add(propertyMarker);
+                _markers = newMarkers;
                 _drawPolyline(position);
               });
             },
