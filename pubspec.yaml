@@ -49,7 +49,7 @@ dependencies:
   flutter_polyline_points: ^2.1.0
   google_directions_api: ^0.10.0 # Updated for fetching route directions
   http: ^1.1.0 # For making HTTP requests to Places API
-
+  flutter_google_places_sdk: ^0.4.2+1
 dev_dependencies:
   flutter_test:
     sdk: flutter

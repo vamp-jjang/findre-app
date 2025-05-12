@@ -19,6 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _password = TextEditingController();
   bool _isLoading = false;
   bool _passwordVisible = false;
+  String _errorMessage = '';
 
   @override
   void dispose() {
@@ -227,11 +228,44 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-		  _login() async{
-    final user = await _auth.signInAccount(
-      email: _email.text, password: _password.text);
-    if(user != null){
-      Navigator.push(context, MaterialPageRoute(builder: (context)=> const HomeScreen()));
+		  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  _login() async {
+    try {
+      final user = await _auth.signInAccount(
+        email: _email.text,
+        password: _password.text,
+      );
+      if (user != null) {
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const HomeScreen()),
+          );
+        }
+      } else {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Invalid email or password';
+        });
+        _showErrorSnackBar(_errorMessage);
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.toString().contains('firebase')
+            ? 'Authentication failed. Please check your credentials.'
+            : 'An error occurred. Please try again.';
+      });
+      _showErrorSnackBar(_errorMessage);
     }
   }
 }
