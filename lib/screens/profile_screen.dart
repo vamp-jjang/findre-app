@@ -73,7 +73,7 @@ class ProfileScreen extends StatelessWidget {
                   color: Colors.red,
                 ),
                 title: const Text(
-                  'Find a local Agent',
+                  'Agent findRE',
                   style: TextStyle(fontWeight: FontWeight.w500),
                 ),
                 trailing: const Icon(Icons.chevron_right),

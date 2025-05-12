@@ -133,11 +133,21 @@ String errorMessage = '';
                 ),
               ),
               const SizedBox(height: 24),
+              // Display error message if any
+              if (errorMessage.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10.0),
+                  child: Text(
+                    errorMessage,
+                    style: const TextStyle(color: Colors.red, fontSize: 14),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               // Next button
               ElevatedButton(
                 onPressed: _signup,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey,
+                  backgroundColor: const Color.fromARGB(255, 246, 78, 78),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(32),
@@ -167,8 +177,7 @@ String errorMessage = '';
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   _SocialButton(
-                    onPressed: () async{
-                      // TODO: Implement Google sign in
+                    onPressed: () async {
                       await _auth.loginWithGoogle();
                     },
                     icon: 'Google',
@@ -194,45 +203,71 @@ String errorMessage = '';
     );
   }
     void _signup() async{
-    if (!mounted) return;
-    try {
-      final user = await _auth.createAccount(
-        email: _email.text,
-        password: _password.text,
-      );
-      if (user != null) {
-        print('User created');
-        if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const LoginScreen(),
-          ),
+      setState(() {
+        errorMessage = ''; // Clear previous error messages
+      });
+      try {
+         final user = await _auth.createAccount(
+          email: _email.text,
+          password: _password.text,
         );
+        if(user != null){
+          print('User created');
+          // Navigate to LoginScreen after successful signup
+          // It's generally better to navigate to a screen that confirms account creation
+          // or directly to the home screen if auto-login is implemented.
+          // For now, as per existing logic, navigating to LoginScreen.
+          if (mounted) { // Check if the widget is still in the tree
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const LoginScreen(),
+              ),
+            );
+          }
+        }
+      } on FirebaseAuthException catch (e) {
+        String displayMessage;
+        switch (e.code) {
+          case 'invalid-email':
+            displayMessage = 'Invalid email address. Please enter a valid email.';
+            break;
+          case 'email-already-in-use':
+            displayMessage = 'This email address is already in use by another account.';
+            break;
+          case 'weak-password':
+            displayMessage = 'The password provided is too weak.';
+            break;
+          case 'network-request-failed':
+            displayMessage = 'No internet connection. Please check your network and try again.';
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('No internet connection. Please check your network and try again.'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+            // We still set errorMessage for consistency, though SnackBar is shown
+            // Or choose to only show SnackBar and not update errorMessage for network issues
+            break;
+          default:
+            displayMessage = e.message ?? 'An unexpected error occurred. Please try again.';
+        }
+        if (mounted) {
+          setState(() {
+            errorMessage = displayMessage;
+          });
+        }
+      } catch (e) {
+        // Catch any other non-FirebaseAuth exceptions
+        if (mounted) {
+          setState(() {
+            errorMessage = 'An unexpected error occurred. Please try again.';
+          });
+        }
+        print('Signup error: $e'); // Log for debugging
       }
-    } on FirebaseAuthException catch (e) {
-      if (!mounted) return;
-      String message;
-      if (e.code == 'network-request-failed') {
-        message = 'No internet connection. Please check your network and try again.';
-      } else {
-        message = e.message ?? 'An unexpected error occurred.';
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('An unexpected error occurred: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
   } 
 }
 

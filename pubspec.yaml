@@ -61,9 +61,9 @@ dev_dependencies:
 flutter_icons:
   android: true
   ios: true
-  image_path: "assets/icons/app_icon.png"
+  image_path: "assets/icons/icon.png"
   adaptive_icon_background: "#ffffff"
-  adaptive_icon_foreground: "assets/icons/play_store_512.png"
+  adaptive_icon_foreground: "assets/icons/icon.png"
 
   # To add assets to your application, add an assets section, like this:
 
