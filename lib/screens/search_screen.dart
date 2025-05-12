@@ -4,6 +4,10 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:google_directions_api/google_directions_api.dart' as directions_api;
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+// import 'package:google_maps_webservice/places.dart' as P; // Remove this line
+import 'package:http/http.dart' as http; // Add http package
+import 'dart:convert'; // Add dart:convert for jsonDecode
+import './place_search_screen.dart'; // Import the new screen
 // For decoding polyline
 
 
@@ -17,7 +21,8 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  
+  GoogleMapController? _mapController;
+  // P.GoogleMapsPlaces? _placesApi; // Remove this line
   bool _isListView = false;
   Position? _currentPosition;
   Set<Marker> _markers = {};
@@ -34,23 +39,26 @@ class _SearchScreenState extends State<SearchScreen> {
     if (GOOGLE_MAPS_API_KEY == "YOUR_GOOGLE_MAPS_API_KEY") {
       // Show a dialog or toast to remind the user to add their API key
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('API Key Required'),
-            content: const Text('Please replace "YOUR_GOOGLE_MAPS_API_KEY" in search_screen.dart with your actual Google Maps API key to enable route functionality.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
+        if (mounted) { // Check if the widget is still in the tree
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('API Key Required'),
+              content: const Text('Please replace "YOUR_GOOGLE_MAPS_API_KEY" in search_screen.dart with your actual Google Maps API key to enable route and place search functionality.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+        }
       });
     } else {
       directions_api.DirectionsService.init(GOOGLE_MAPS_API_KEY);
       _directionsService = directions_api.DirectionsService();
+      // _placesApi = P.GoogleMapsPlaces(apiKey: GOOGLE_MAPS_API_KEY); // Remove this line
     }
   }
 
@@ -253,6 +261,95 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  Future<void> _navigateToPlaceSearch() async {
+    // if (_placesApi == null) { // Remove this check
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     const SnackBar(content: Text('Places API not initialized. Check API Key.')),
+    //   );
+    //   return;
+    // }
+    if (GOOGLE_MAPS_API_KEY == "YOUR_GOOGLE_MAPS_API_KEY" || GOOGLE_MAPS_API_KEY.isEmpty) {
+       ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('API Key not configured. Cannot search for places.')),
+      );
+      return;
+    }
+    // Navigate to the PlaceSearchScreen and wait for a result.
+    final placeId = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PlaceSearchScreen(apiKey: GOOGLE_MAPS_API_KEY), // Pass the API key
+      ),
+    );
+
+    if (placeId != null && placeId.isNotEmpty) {
+      _goToPlace(placeId);
+    }
+  }
+
+  Future<void> _goToPlace(String placeId) async {
+    // if (_placesApi == null) return; // Remove this check
+    if (GOOGLE_MAPS_API_KEY == "YOUR_GOOGLE_MAPS_API_KEY" || GOOGLE_MAPS_API_KEY.isEmpty) {
+      print("API Key is not set for fetching place details.");
+      if(mounted){
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('API Key not configured. Cannot fetch place details.')),
+        );
+      }
+      return;
+    }
+
+    final String url = 'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$GOOGLE_MAPS_API_KEY';
+
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['status'] == 'OK' && data['result'] != null) {
+          final result = data['result'];
+          final location = result['geometry']['location'];
+          final LatLng newLatLng = LatLng(location['lat'], location['lng']);
+
+          _mapController?.animateCamera(CameraUpdate.newCameraPosition(
+            CameraPosition(target: newLatLng, zoom: 15.0),
+          ));
+
+          final selectedPlaceMarker = Marker(
+            markerId: MarkerId('selected_place_$placeId'),
+            position: newLatLng,
+            infoWindow: InfoWindow(title: result['name'], snippet: result['formatted_address']),
+            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet),
+          );
+
+          if (!mounted) return;
+          setState(() {
+            // Clear previous property markers but keep current location marker
+            _markers = _markers.where((m) => m.markerId == _markerId).toSet();
+            _markers.add(selectedPlaceMarker);
+            _polylines.clear(); // Clear any existing polylines like routes
+          });
+
+        } else {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error fetching place details: ${data['error_message'] ?? data['status']}')),
+          );
+        }
+      } else {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error fetching place details: ${response.reasonPhrase}')),
+          );
+      }
+    } catch (e) {
+      print('Error getting place details: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('An error occurred while fetching place details.')),
+      );
+    }
+  }
+
   static const CameraPosition _initialPosition = CameraPosition(
     target: LatLng(9.814062304659195, 124.1764920905616), // Default to Carmen, Bohol coordinates
     zoom: 14,
@@ -267,7 +364,7 @@ class _SearchScreenState extends State<SearchScreen> {
           GoogleMap(
             initialCameraPosition: _initialPosition,
             onMapCreated: (GoogleMapController controller) {
-            
+              _mapController = controller; // Assign the controller
             },
             myLocationButtonEnabled: true,
             myLocationEnabled: true,
@@ -315,6 +412,8 @@ class _SearchScreenState extends State<SearchScreen> {
                       children: [
                         Expanded(
                           child: TextField(
+                            readOnly: true, // Make TextField read-only
+                            onTap: _navigateToPlaceSearch, // Navigate on tap
                             decoration: InputDecoration(
                               hintText: 'City, Neighborhood, Address, School',
                               border: InputBorder.none,

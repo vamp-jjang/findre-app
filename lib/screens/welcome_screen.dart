@@ -100,19 +100,39 @@ final AuthService firebaseAuth = AuthService();
               const SizedBox(height: 24),
               // Skip for now or anon signin
               TextButton(
-                onPressed: () async{
-                  dynamic result = await firebaseAuth.signInAnon();
-                  if(result == null){
-                    print('error signing in');
-                  }else{
-                    print('signed in');
-                    print(result.uid);
-                        Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const HomeScreen(),
+                onPressed: () async {
+                  try {
+                    dynamic result = await firebaseAuth.signInAnon();
+                    if (result == null) {
+                      print('error signing in');
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Error signing in. Please check your connection.'),
+                          ),
+                        );
+                      }
+                    } else {
+                      print('signed in');
+                      print(result.uid);
+                      if (context.mounted) {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const HomeScreen(),
+                          ),
+                        );
+                      }
+                    }
+                  } catch (e) {
+                    print('Error during sign in: $e');
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to sign in: ${e.toString()} Please check your internet connection.'),
                         ),
                       );
+                    }
                   }
                 },
                 child: const Text(

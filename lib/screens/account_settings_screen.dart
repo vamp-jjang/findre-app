@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:real_estate/auth_services.dart';
-import 'login_screen.dart';
+import 'welcome_screen.dart';
 
 
 class AccountSettingsScreen extends StatelessWidget {
@@ -96,7 +96,7 @@ class AccountSettingsScreen extends StatelessWidget {
               await _auth.signOut();
                             Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                MaterialPageRoute(builder: (context) => WelcomeScreen()),
                 (route) => false,
               ); 
             },
