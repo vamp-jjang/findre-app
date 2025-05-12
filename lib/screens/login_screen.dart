@@ -254,16 +254,25 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         setState(() {
           _isLoading = false;
-          _errorMessage = 'Invalid email or password';
+          _errorMessage = 'Error Logging In';
         });
         _showErrorSnackBar(_errorMessage);
       }
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _errorMessage = e.toString().contains('firebase')
-            ? 'Authentication failed. Please check your credentials.'
-            : 'An error occurred. Please try again.';
+        String errorMessage;
+        if (e.toString().toLowerCase().contains('socketexception') || 
+            e.toString().toLowerCase().contains('networkerror') || 
+            e.toString().toLowerCase().contains('host lookup') ||
+            e.toString().toLowerCase().contains('failed host lookup')) {
+          errorMessage = 'No internet connection. Please check your network and try again.';
+        } else if (e.toString().contains('firebase')) {
+          errorMessage = 'Authentication failed. Please check your credentials.';
+        } else {
+          errorMessage = 'An error occurred. Please try again.';
+        }
+        _errorMessage = errorMessage;
       });
       _showErrorSnackBar(_errorMessage);
     }

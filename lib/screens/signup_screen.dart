@@ -167,8 +167,9 @@ String errorMessage = '';
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   _SocialButton(
-                    onPressed: () {
+                    onPressed: () async{
                       // TODO: Implement Google sign in
+                      await _auth.loginWithGoogle();
                     },
                     icon: 'Google',
                   ),
@@ -193,16 +194,42 @@ String errorMessage = '';
     );
   }
     void _signup() async{
-   final user = await _auth.createAccount(
-      email: _email.text,
-      password: _password.text,
-    );
-    if(user != null){
-      print('User created');
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => LoginScreen(),
+    if (!mounted) return;
+    try {
+      final user = await _auth.createAccount(
+        email: _email.text,
+        password: _password.text,
+      );
+      if (user != null) {
+        print('User created');
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const LoginScreen(),
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      String message;
+      if (e.code == 'network-request-failed') {
+        message = 'No internet connection. Please check your network and try again.';
+      } else {
+        message = e.message ?? 'An unexpected error occurred.';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('An unexpected error occurred: ${e.toString()}'),
+          backgroundColor: Colors.red,
         ),
       );
     }
