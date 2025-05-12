@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:real_estate/screens/home_screen.dart';
-import 'package:real_estate/screens/login_screen.dart';
 import 'package:real_estate/screens/welcome_screen.dart';
 
 
@@ -17,7 +16,10 @@ class Wrapper extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.waiting) {
 
         return const Center(
-          child: CircularProgressIndicator(),
+          child: CircularProgressIndicator(
+            color: Colors.red,
+            strokeWidth: 2,
+          ),
 
         );
             
