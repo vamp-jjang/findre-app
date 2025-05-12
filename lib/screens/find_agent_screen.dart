@@ -14,7 +14,7 @@ class FindAgentScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Find a local KW® agent',
+          'Find a local Agent',
           style: TextStyle(color: Colors.black),
         ),
       ),
@@ -25,7 +25,7 @@ class FindAgentScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             child: TextField(
               decoration: InputDecoration(
-                hintText: 'Find a local KW® agent by name',
+                hintText: 'Agent name, location, or license number',
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8.0),
