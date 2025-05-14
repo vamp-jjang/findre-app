@@ -13,16 +13,24 @@ class AccountSettingsScreen extends StatefulWidget {
 
 class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
   final _auth = AuthService();
-  String _userName = 'Jayhann Villarin';
+  String _userName = 'User';
+  String _userEmail = '';
   
   @override
   void initState() {
     super.initState();
-    // Initialize with current name if available
+    // Initialize with current name and email if available
     final currentUser = _auth.currentUser;
-    if (currentUser != null && currentUser.displayName != null) {
+    if (currentUser != null) {
       setState(() {
-        _userName = currentUser.displayName!;
+        if (currentUser.displayName != null) {
+          _userName = currentUser.displayName!;
+        }
+        
+        // Get email if available, otherwise leave empty
+        if (currentUser.email != null && !currentUser.isAnonymous) {
+          _userEmail = currentUser.email!;
+        }
       });
     }
   }
@@ -85,7 +93,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
           ListTile(
             title: const Text('Email'),
             trailing: Text(
-              'jayhannvillarin@gmail.com',
+              _userEmail,
               style: const TextStyle(color: Colors.grey),
             ),
           ),
