@@ -1,4 +1,9 @@
+import 'dart:async';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:real_estate/wrapper.dart';
+import '../auth_services.dart';
 
 class VerificationScreen extends StatefulWidget {
   final String email;
@@ -11,13 +16,26 @@ class VerificationScreen extends StatefulWidget {
 
 class _VerificationScreenState extends State<VerificationScreen> {
   final _verificationController = TextEditingController();
-
+  final _auth = AuthService();
+  late Timer timer;
   @override
   void dispose() {
     _verificationController.dispose();
     super.dispose();
   }
+  void initState() {
+    super.initState();
+    _auth.sendEmailVerificationLink();
+    timer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      FirebaseAuth.instance.currentUser?.reload();
+      if (FirebaseAuth.instance.currentUser!.emailVerified == true)
+      {
+        timer.cancel();
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const Wrapper()));
+      }
+    });
 
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import '../auth_services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'verification_screen.dart';
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
 
@@ -221,7 +222,9 @@ String errorMessage = '';
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => const LoginScreen(),
+                builder: (context) => VerificationScreen(
+                  email: _email.text,
+                ),
               ),
             );
           }

@@ -110,6 +110,13 @@ class AuthService {
       return null;
     }
   }
+  Future <void> sendEmailVerificationLink() async {
+    try {
+     await _auth.currentUser?.sendEmailVerification();
+    } catch (e) {
+      print(e.toString());
+    }
+  }
   
   
 }
