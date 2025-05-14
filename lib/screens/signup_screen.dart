@@ -212,6 +212,11 @@ String errorMessage = '';
           email: _email.text,
           password: _password.text,
         );
+        
+        // Update the username for the newly created user
+        if (user != null) {
+          await _auth.updateUsername(username: _username.text);
+        }
         if(user != null){
           print('User created');
           // Navigate to LoginScreen after successful signup

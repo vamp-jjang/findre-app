@@ -1,14 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:real_estate/auth_services.dart';
 import 'welcome_screen.dart';
+import 'update_name_screen.dart';
 
 
-class AccountSettingsScreen extends StatelessWidget {
+class AccountSettingsScreen extends StatefulWidget {
   const AccountSettingsScreen({super.key});
 
   @override
+  State<AccountSettingsScreen> createState() => _AccountSettingsScreenState();
+}
+
+class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
+  final _auth = AuthService();
+  String _userName = 'Jayhann Villarin';
+  
+  @override
+  void initState() {
+    super.initState();
+    // Initialize with current name if available
+    final currentUser = _auth.currentUser;
+    if (currentUser != null && currentUser.displayName != null) {
+      setState(() {
+        _userName = currentUser.displayName!;
+      });
+    }
+  }
+  
+  @override
   Widget build(BuildContext context) {
-    final _auth = AuthService();
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -41,15 +61,26 @@ class AccountSettingsScreen extends StatelessWidget {
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Jayhann Villarin',
-                  style: TextStyle(color: Colors.grey),
+                Text(
+                  _userName,
+                  style: const TextStyle(color: Colors.grey),
                 ),
                 const SizedBox(width: 8),
                 Icon(Icons.chevron_right, color: Colors.grey[400]),
               ],
             ),
-            onTap: () {},
+            onTap: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const UpdateNameScreen()),
+              );
+              
+              if (result != null && result is String) {
+                setState(() {
+                  _userName = result;
+                });
+              }
+            },
           ),
           ListTile(
             title: const Text('Email'),

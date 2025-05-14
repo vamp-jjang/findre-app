@@ -1,9 +1,53 @@
 import 'package:flutter/material.dart';
 import 'account_settings_screen.dart';
 import 'find_agent_screen.dart';
+import '../auth_services.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final _auth = AuthService();
+  String _userName = 'User';
+  String _initials = 'U';
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+  
+  void _loadUserData() {
+    final currentUser = _auth.currentUser;
+    if (currentUser != null && currentUser.displayName != null) {
+      setState(() {
+        _userName = currentUser.displayName!;
+        _initials = _getInitials(_userName);
+      });
+    }
+  }
+  
+  String _getInitials(String name) {
+    if (name.isEmpty) {
+      return 'U';
+    }
+    
+    List<String> nameParts = name.split(' ');
+    String initials = '';
+    
+    if (nameParts.isNotEmpty && nameParts[0].isNotEmpty) {
+      initials += nameParts[0][0];
+      if (nameParts.length > 1 && nameParts[nameParts.length - 1].isNotEmpty) {
+        initials += nameParts[nameParts.length - 1][0];
+      }
+    }
+    
+    return initials.isEmpty ? 'U' : initials.toUpperCase();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,10 +71,10 @@ class ProfileScreen extends StatelessWidget {
                           shape: BoxShape.circle,
                           color: Color(0xFF2F3542),
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Text(
-                            'JV',
-                            style: TextStyle(
+                            _initials,
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -40,9 +84,9 @@ class ProfileScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: 12),
                       // User name
-                      const Text(
-                        'Jayhann Villarin',
-                        style: TextStyle(
+                      Text(
+                        _userName,
+                        style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),

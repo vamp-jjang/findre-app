@@ -63,7 +63,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                     height: 48,
                     fit: BoxFit.contain,
                   ),
-              const SizedBox(height: 48),
+              const SizedBox(height: 100),
               // Email field with checkmark
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -100,54 +100,14 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        'We\'ve sent a verification code to the email address entered above.',
+                        'We\'ve sent a verification link to the email address entered above to finish setting up your account.',
                         style: TextStyle(
                           color: Colors.blue[900],
                         ),
                       ),
                     ),
-                    TextButton(
-                      onPressed: () {
-                        // TODO: Implement resend code functionality
-                      },
-                      child: Text(
-                        'Resend Code',
-                        style: TextStyle(
-                          color: Colors.blue[900],
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+        
                   ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              // Verification code field
-              TextField(
-                controller: _verificationController,
-                decoration: InputDecoration(
-                  labelText: 'VERIFICATION CODE',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 48),
-              // Create Account button
-              ElevatedButton(
-                onPressed: () {
-                  // TODO: Implement account creation
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(32),
-                  ),
-                ),
-                child: const Text(
-                  'Create Account',
-                  style: TextStyle(fontSize: 16,color: Colors.white),
                 ),
               ),
             ],
