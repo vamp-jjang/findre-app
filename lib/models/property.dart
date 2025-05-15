@@ -10,6 +10,8 @@ class Property {
   final String imageUrl;
   final bool isFavorite;
   final String listingCourtesy;
+  final double? latitude;
+  final double? longitude;
 
   Property({
     required this.id,
@@ -23,6 +25,8 @@ class Property {
     required this.imageUrl,
     this.isFavorite = false,
     required this.listingCourtesy,
+    this.latitude,
+    this.longitude,
   });
 
   Property copyWith({
@@ -37,6 +41,8 @@ class Property {
     String? imageUrl,
     bool? isFavorite,
     String? listingCourtesy,
+    double? latitude,
+    double? longitude,
   }) {
     return Property(
       id: id ?? this.id,
@@ -50,6 +56,8 @@ class Property {
       imageUrl: imageUrl ?? this.imageUrl,
       isFavorite: isFavorite ?? this.isFavorite,
       listingCourtesy: listingCourtesy ?? this.listingCourtesy,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
     );
   }
   
@@ -67,6 +75,8 @@ class Property {
       'imageUrl': imageUrl,
       'isFavorite': isFavorite,
       'listingCourtesy': listingCourtesy,
+      'latitude': latitude,
+      'longitude': longitude,
     };
   }
   
@@ -84,6 +94,8 @@ class Property {
       imageUrl: map['imageUrl'] ?? '',
       isFavorite: map['isFavorite'] ?? false,
       listingCourtesy: map['listingCourtesy'] ?? '',
+      latitude: map['latitude']?.toDouble(),
+      longitude: map['longitude']?.toDouble(),
     );
   }
 }

@@ -90,6 +90,20 @@ class FirestoreService {
     }
   }
   
+  // Update property coordinates
+  Future<bool> updatePropertyCoordinates(String id, double latitude, double longitude) async {
+    try {
+      await _propertiesCollection.doc(id).update({
+        'latitude': latitude,
+        'longitude': longitude,
+      });
+      return true;
+    } catch (e) {
+      print('Error updating property coordinates: $e');
+      return false;
+    }
+  }
+  
   // Add mock properties to Firestore (for initial setup)
   Future<void> addMockPropertiesToFirestore(List<Property> properties) async {
     try {

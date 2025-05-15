@@ -9,6 +9,8 @@ import 'package:http/http.dart' as http; // Add http package
 import 'dart:convert'; // Add dart:convert for jsonDecode
 import 'dart:async'; // Add for StreamSubscription
 import 'dart:ui' as ui; // Add for PictureRecorder and Image
+import 'package:flutter/scheduler.dart'; // For AppLifecycleState
+import '../utils/lifecycle_handler.dart'; // Import lifecycle handler
 import './place_search_screen.dart'; // Import the new screen
 import '../models/property.dart'; // Import the property model
 import '../services/favorites_service.dart'; // Import favorites service
@@ -37,14 +39,7 @@ class _SearchScreenState extends State<SearchScreen> {
   directions_api.DirectionsService? _directionsService;
   PolylinePoints _polylinePoints = PolylinePoints();
   
-  // List of property locations with their prices
-  final List<Map<String, dynamic>> _propertyLocations = [
-    {'position': LatLng(9.641313657391187, 123.88062357861067), 'price': 199900},
-    {'position': LatLng(9.646976145946546, 123.8694971664606), 'price': 169000},
-    {'position': LatLng(9.674034604353054, 123.87699593290279), 'price': 225000},
-    {'position': LatLng(9.654966026959377, 123.84926638541329), 'price': 189500},
-    {'position': LatLng(9.604226593474564, 123.82824421102796), 'price': 210000},
-  ];
+  // We'll use properties from Firestore instead of hardcoded locations
   
   // Firestore service instance
   final FirestoreService _firestoreService = FirestoreService();
@@ -57,11 +52,18 @@ class _SearchScreenState extends State<SearchScreen> {
   void initState() {
     super.initState();
     _requestLocationPermission();
-    _loadProperties();
-    // Add custom property markers after a short delay to ensure map is loaded
-    Future.delayed(const Duration(milliseconds: 500), () {
-      _addCustomPropertyMarkers();
-    });
+    _loadProperties(); // This will now also load the markers
+    
+    // Add listener to refresh markers when app resumes
+    WidgetsBinding.instance.addObserver(LifecycleEventHandler(
+      resumeCallBack: () async {
+        // Refresh properties and markers when app is resumed
+        if (mounted) {
+          await _refreshPropertiesAndMarkers();
+        }
+        return Future.value(null);
+      }
+    ));
     
     if (GOOGLE_MAPS_API_KEY == "YOUR_GOOGLE_MAPS_API_KEY") {
       // Show a dialog or toast to remind the user to add their API key
@@ -89,7 +91,27 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
   
-  // Load properties from Firestore
+  // Refresh properties and markers from Firestore
+  Future<void> _refreshPropertiesAndMarkers() async {
+    if (!mounted) return;
+    
+    try {
+      // Get updated properties from Firestore
+      final properties = await _firestoreService.getProperties();
+      
+      if (!mounted) return;
+      setState(() {
+        _properties = properties;
+      });
+      
+      // Update markers with new property data
+      _addCustomPropertyMarkers();
+    } catch (e) {
+      print('Error refreshing properties: $e');
+    }
+  }
+  
+  // Load properties from Firestore and add markers
   Future<void> _loadProperties() async {
     if (!mounted) return;
     setState(() {
@@ -102,7 +124,18 @@ class _SearchScreenState extends State<SearchScreen> {
       
       // If no properties in Firestore, add mock data
       if (properties.isEmpty) {
-        await _firestoreService.addMockPropertiesToFirestore(getMockProperties());
+        // Add latitude and longitude to mock properties
+        final mockProperties = getMockProperties();
+        // Add coordinates to mock properties
+        final mockPropertiesWithCoordinates = [
+          mockProperties[0].copyWith(latitude: 9.641313657391187, longitude: 123.88062357861067),
+          mockProperties[1].copyWith(latitude: 9.646976145946546, longitude: 123.8694971664606),
+          mockProperties[2].copyWith(latitude: 9.674034604353054, longitude: 123.87699593290279),
+          mockProperties[3].copyWith(latitude: 9.654966026959377, longitude: 123.84926638541329),
+          mockProperties[4].copyWith(latitude: 9.604226593474564, longitude: 123.82824421102796),
+        ];
+        
+        await _firestoreService.addMockPropertiesToFirestore(mockPropertiesWithCoordinates);
         // Fetch again after adding mock data
         final updatedProperties = await _firestoreService.getProperties();
         if (!mounted) return;
@@ -110,12 +143,16 @@ class _SearchScreenState extends State<SearchScreen> {
           _properties = updatedProperties;
           _isLoading = false;
         });
+        // Add markers for properties
+        _addCustomPropertyMarkers();
       } else {
         if (!mounted) return;
         setState(() {
           _properties = properties;
           _isLoading = false;
         });
+        // Add markers for properties
+        _addCustomPropertyMarkers();
       }
     } catch (e) {
       print('Error loading properties: $e');
@@ -125,6 +162,8 @@ class _SearchScreenState extends State<SearchScreen> {
         _properties = getMockProperties();
         _isLoading = false;
       });
+      // Add markers for properties
+      _addCustomPropertyMarkers();
     }
   }
 
@@ -245,6 +284,8 @@ class _SearchScreenState extends State<SearchScreen> {
     _positionStreamSubscription?.cancel();
     // Dispose map controller
     _mapController?.dispose();
+    // Remove lifecycle observer
+    WidgetsBinding.instance.removeObserver(LifecycleEventHandler());
     super.dispose();
   }
 
@@ -415,8 +456,13 @@ class _SearchScreenState extends State<SearchScreen> {
 
           if (!mounted) return;
           setState(() {
-            // Clear previous property markers but keep current location marker
-            _markers = _markers.where((m) => m.markerId == _markerId).toSet();
+            // Keep all property markers (starting with 'property_') and current location marker
+            // Only remove any previous selected place markers
+            _markers = _markers.where((m) => 
+              m.markerId == _markerId || 
+              m.markerId.value.startsWith('property_') || 
+              !m.markerId.value.startsWith('selected_place_')
+            ).toSet();
             _markers.add(selectedPlaceMarker);
             _polylines.clear(); // Clear any existing polylines like routes
           });
@@ -442,30 +488,55 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  static const CameraPosition _initialPosition = CameraPosition(
-    target: LatLng(9.641313657391187, 123.88062357861067), // Updated to center on first property location
-    zoom: 12,
-  );
+  // Get initial camera position based on first property with coordinates
+  CameraPosition _getInitialCameraPosition() {
+    // Default position (will be used if no properties have coordinates)
+    LatLng defaultTarget = const LatLng(9.641313657391187, 123.88062357861067);
+    
+    // Find the first property with coordinates
+    for (final property in _properties) {
+      if (property.latitude != null && property.longitude != null) {
+        return CameraPosition(
+          target: LatLng(property.latitude!, property.longitude!),
+          zoom: 12,
+        );
+      }
+    }
+    
+    // Return default position if no properties have coordinates
+    return CameraPosition(
+      target: defaultTarget,
+      zoom: 12,
+    );
+  }
   
-  // Method to add custom bubble markers for properties
+  // Method to add custom bubble markers for properties from Firestore
   void _addCustomPropertyMarkers() {
-    for (int i = 0; i < _propertyLocations.length; i++) {
-      final location = _propertyLocations[i];
-      final price = location['price'];
-      final formattedPrice = '₱${price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => "${m[1]},")}K';
+    // Clear existing property markers but keep current location marker and any selected place markers
+    _markers = _markers.where((m) => m.markerId == _markerId || m.markerId.value.startsWith('selected_place_')).toSet();
+    
+    // Add markers for each property that has coordinates
+    for (int i = 0; i < _properties.length; i++) {
+      final property = _properties[i];
+      
+      // Skip properties without coordinates
+      if (property.latitude == null || property.longitude == null) continue;
+      
+      final position = LatLng(property.latitude!, property.longitude!);
+      final formattedPrice = '₱${property.price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => "${m[1]},")}';
       
       // Add marker with InfoWindow to display price and onTap callback for drawing polyline
       final marker = Marker(
-        markerId: MarkerId('property_$i'),
-        position: location['position'],
+        markerId: MarkerId('property_${property.id}'),
+        position: position,
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan),
         infoWindow: InfoWindow(
           title: formattedPrice,
-          snippet: 'Property details',
+          snippet: property.address,
         ),
         onTap: () {
           // Draw polyline from current location to this property
-          _drawPolyline(location['position']);
+          _drawPolyline(position);
         },
       );
       
@@ -479,8 +550,10 @@ class _SearchScreenState extends State<SearchScreen> {
   void _showAllInfoWindows() {
     if (_mapController != null) {
       // Trigger showing all InfoWindows by tapping each marker programmatically
-      for (int i = 0; i < _propertyLocations.length; i++) {
-        _mapController!.showMarkerInfoWindow(MarkerId('property_$i'));
+      for (final property in _properties) {
+        if (property.latitude != null && property.longitude != null) {
+          _mapController!.showMarkerInfoWindow(MarkerId('property_${property.id}'));
+        }
       }
     }
   }
@@ -732,7 +805,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     target: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
                     zoom: 15,
                   )
-                : _initialPosition,
+                : _getInitialCameraPosition(),
               onMapCreated: (GoogleMapController controller) {
                 _mapController = controller; // Assign the controller
                 // Move camera to current location if available after map is created
