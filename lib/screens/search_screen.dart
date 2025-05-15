@@ -454,7 +454,7 @@ class _SearchScreenState extends State<SearchScreen> {
       final price = location['price'];
       final formattedPrice = '₱${price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => "${m[1]},")}K';
       
-      // Add marker with InfoWindow to display price
+      // Add marker with InfoWindow to display price and onTap callback for drawing polyline
       final marker = Marker(
         markerId: MarkerId('property_$i'),
         position: location['position'],
@@ -463,6 +463,10 @@ class _SearchScreenState extends State<SearchScreen> {
           title: formattedPrice,
           snippet: 'Property details',
         ),
+        onTap: () {
+          // Draw polyline from current location to this property
+          _drawPolyline(location['position']);
+        },
       );
       
       setState(() {
@@ -832,8 +836,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
               ),
             ),
-          if (!_isListView)
-          // List View Toggle Button
+          // List View Toggle Button - Always visible
           Positioned(
             bottom: 16,
             left: 16,
