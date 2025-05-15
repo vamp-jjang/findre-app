@@ -8,6 +8,8 @@ import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:http/http.dart' as http; // Add http package
 import 'dart:convert'; // Add dart:convert for jsonDecode
 import './place_search_screen.dart'; // Import the new screen
+import '../models/property.dart'; // Import the property model
+import '../services/favorites_service.dart'; // Import favorites service
 // For decoding polyline
 
 
@@ -110,6 +112,19 @@ class _SearchScreenState extends State<SearchScreen> {
         _currentPosition = position;
         _updateMarker();
       });
+      
+      // Move camera to current location if map controller is already initialized
+      if (_mapController != null) {
+        _mapController!.animateCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(
+              target: LatLng(position.latitude, position.longitude),
+              zoom: 15,
+            ),
+          ),
+        );
+      }
+      
       _startLocationUpdates();
     } catch (e) {
       print('Error getting location: $e');
@@ -355,118 +370,360 @@ class _SearchScreenState extends State<SearchScreen> {
     zoom: 14,
   );
 
+  // Property card widget for list view
+  Widget _buildPropertyCard(Property property) {
+    final formattedPrice = '\$${property.price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => "${m[1]},")}'; 
+    
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 2,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Property image with favorite button
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                child: Image.network(
+                  property.imageUrl,
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    height: 200,
+                    color: Colors.grey[300],
+                    child: const Center(child: Icon(Icons.error, size: 50)),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: CircleAvatar(
+                  backgroundColor: Colors.white,
+                  radius: 18,
+                  child: IconButton(
+                    icon: Icon(
+                      property.isFavorite ? Icons.favorite : Icons.favorite_border,
+                      color: property.isFavorite ? Colors.red : Colors.black,
+                      size: 20,
+                    ),
+                    onPressed: () async {
+                      // Toggle favorite status using FavoritesService
+                      final updatedProperty = property.copyWith(isFavorite: !property.isFavorite);
+                      
+                      // Save to favorites service
+                      await FavoritesService.toggleFavorite(updatedProperty);
+                      
+                      // Update the property in the mock data for UI update
+                      setState(() {
+                        // Find the property in the mock data and update it
+                        final index = getMockProperties().indexWhere((p) => p.id == property.id);
+                        if (index != -1) {
+                          getMockProperties()[index] = updatedProperty;
+                        }
+                      });
+                      
+                      // Show a snackbar to confirm the action
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            updatedProperty.isFavorite 
+                              ? 'Added to favorites' 
+                              : 'Removed from favorites',
+                          ),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              // Image pagination dots
+              Positioned(
+                bottom: 8,
+                left: 0,
+                right: 0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(4, (index) => Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 2),
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: index == 0 ? Colors.white : Colors.white.withOpacity(0.5),
+                    ),
+                  )),
+                ),
+              ),
+            ],
+          ),
+          // Property details
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  formattedPrice,
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Text(
+                      '${property.squareFeet.toStringAsFixed(0)} sq ft',
+                      style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${property.acres} ac',
+                      style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${property.address}, ${property.city}, ${property.state} ${property.zipCode}',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Listing Courtesy Of: ${property.listingCourtesy}',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Get mock property data
+    final properties = getMockProperties();
+    
     return Scaffold(
       body: Stack(
         children: [
-          // Map View
-          GoogleMap(
-            initialCameraPosition: _initialPosition,
-            onMapCreated: (GoogleMapController controller) {
-              _mapController = controller; // Assign the controller
-            },
-            myLocationButtonEnabled: true,
-            myLocationEnabled: true,
-            mapToolbarEnabled: true,
-            zoomControlsEnabled: false,
-            markers: _markers,
-            polylines: _polylines,
-            onTap: (LatLng position) {
-              final propertyMarker = Marker(
-                markerId: MarkerId('property_${position.latitude}_${position.longitude}'),
-                position: position,
-                infoWindow: const InfoWindow(title: 'Selected Property'),
-                onTap: () => _drawPolyline(position), // Call _drawPolyline here as well if needed when tapping existing marker
-              );
-              setState(() {
-                // Add new property marker, keep existing current location marker
-                Set<Marker> newMarkers = _markers.where((m) => m.markerId == _markerId).toSet();
-                newMarkers.add(propertyMarker);
-                _markers = newMarkers;
-                _drawPolyline(position);
-              });
-            },
-          ),
-
-          // Search Bar and Filters
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
+          // Conditional rendering based on view mode
+          _isListView 
+          ? SafeArea(
               child: Column(
                 children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.3),
-                          spreadRadius: 1,
-                          blurRadius: 5,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                  // Search bar for list view
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.3),
+                            spreadRadius: 1,
+                            blurRadius: 5,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              readOnly: true,
+                              onTap: _navigateToPlaceSearch,
+                              decoration: const InputDecoration(
+                                hintText: 'City, Neighborhood, Address, School',
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 14,
+                                ),
+                                prefixIcon: Icon(Icons.search),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            height: 48,
+                            decoration: BoxDecoration(
+                              border: Border(
+                                left: BorderSide(
+                                  color: Colors.grey[300]!,
+                                  width: 1,
+                                ),
+                              ),
+                            ),
+                            child: IconButton(
+                              icon: const Icon(Icons.tune),
+                              onPressed: () {
+                                // Show filters dialog
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                  ),
+                  // Results count and sort options
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(
-                          child: TextField(
-                            readOnly: true, // Make TextField read-only
-                            onTap: _navigateToPlaceSearch, // Navigate on tap
-                            decoration: InputDecoration(
-                              hintText: 'City, Neighborhood, Address, School',
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 14,
-                              ),
-                              prefixIcon: const Icon(Icons.search),
-                            ),
-                          ),
+                        Text(
+                          'All Results',
+                          style: TextStyle(fontSize: 16, color: Colors.grey[700]),
                         ),
-                        Container(
-                          height: 48,
-                          decoration: BoxDecoration(
-                            border: Border(
-                              left: BorderSide(
-                                color: Colors.grey[300]!,
-                                width: 1,
-                              ),
-                            ),
-                          ),
-                          child: IconButton(
-                            icon: const Icon(Icons.tune),
-                            onPressed: () {
-                              // Show filters dialog
-                            },
-                          ),
+                        Text(
+                          '${properties.length} Results',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  // Property listings
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.only(bottom: 80), // Add padding for FAB
+                      itemCount: properties.length,
+                      itemBuilder: (context, index) => _buildPropertyCard(properties[index]),
+                    ),
+                  ),
                 ],
               ),
+            )
+          : GoogleMap(
+              initialCameraPosition: _currentPosition != null
+                ? CameraPosition(
+                    target: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                    zoom: 15,
+                  )
+                : _initialPosition,
+              onMapCreated: (GoogleMapController controller) {
+                _mapController = controller; // Assign the controller
+                // Move camera to current location if available after map is created
+                if (_currentPosition != null) {
+                  controller.animateCamera(
+                    CameraUpdate.newCameraPosition(
+                      CameraPosition(
+                        target: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                        zoom: 15,
+                      ),
+                    ),
+                  );
+                }
+              },
+              myLocationButtonEnabled: true,
+              myLocationEnabled: true,
+              mapToolbarEnabled: true,
+              zoomControlsEnabled: false,
+              markers: _markers,
+              polylines: _polylines,
+              onTap: (LatLng position) {
+                final propertyMarker = Marker(
+                  markerId: MarkerId('property_${position.latitude}_${position.longitude}'),
+                  position: position,
+                  infoWindow: const InfoWindow(title: 'Selected Property'),
+                  onTap: () => _drawPolyline(position), // Call _drawPolyline here as well if needed when tapping existing marker
+                );
+                setState(() {
+                  // Add new property marker, keep existing current location marker
+                  Set<Marker> newMarkers = _markers.where((m) => m.markerId == _markerId).toSet();
+                  newMarkers.add(propertyMarker);
+                  _markers = newMarkers;
+                  _drawPolyline(position);
+                });
+              },
             ),
-          ),
 
-          // Save Button
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 80,
-            right: 16,
-            child: ElevatedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.favorite_border),
-              label: const Text('Save'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).primaryColor,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+          // Search Bar and Filters (only show in map view)
+          if (!_isListView)
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.3),
+                            spreadRadius: 1,
+                            blurRadius: 5,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              readOnly: true, // Make TextField read-only
+                              onTap: _navigateToPlaceSearch, // Navigate on tap
+                              decoration: InputDecoration(
+                                hintText: 'City, Neighborhood, Address, School',
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 14,
+                                ),
+                                prefixIcon: const Icon(Icons.search),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            height: 48,
+                            decoration: BoxDecoration(
+                              border: Border(
+                                left: BorderSide(
+                                  color: Colors.grey[300]!,
+                                  width: 1,
+                                ),
+                              ),
+                            ),
+                            child: IconButton(
+                              icon: const Icon(Icons.tune),
+                              onPressed: () {
+                                // Show filters dialog
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ),
+
+          // Save Button (only show in map view)
+          if (!_isListView)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 80,
+              right: 16,
+              child: ElevatedButton.icon(
+                onPressed: () {},
+                icon: const Icon(Icons.favorite_border),
+                label: const Text('Save'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).primaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              ),
+            ),
 
           // List View Toggle Button
           Positioned(
