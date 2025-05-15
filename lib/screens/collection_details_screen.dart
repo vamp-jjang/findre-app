@@ -19,6 +19,7 @@ class CollectionDetailsScreen extends StatefulWidget {
 
 class _CollectionDetailsScreenState extends State<CollectionDetailsScreen> {
   late List<Property> _properties;
+  final FirestoreService _firestoreService = FirestoreService();
 
   @override
   void initState() {
@@ -56,8 +57,14 @@ class _CollectionDetailsScreenState extends State<CollectionDetailsScreen> {
   }
 
   Future<void> _toggleFavorite(Property property) async {
-    // Toggle favorite status in both local storage and Firestore
-    await FavoritesService.toggleFavorite(property);
+    // Create updated property with toggled favorite status
+    final updatedProperty = property.copyWith(isFavorite: false); // Always set to false when removing from favorites
+    
+    // Update in Firestore first
+    await _firestoreService.updateFavoriteStatus(property.id, false);
+    
+    // Update in local storage
+    await FavoritesService.removeFavorite(property.id);
     
     // Update UI
     setState(() {
