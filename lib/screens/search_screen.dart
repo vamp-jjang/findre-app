@@ -435,7 +435,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   // Property card widget for list view
   Widget _buildPropertyCard(Property property) {
-    final formattedPrice = '\$${property.price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => "${m[1]},")}'; 
+    final formattedPrice = '₱${property.price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => "${m[1]},")}'; 
     
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

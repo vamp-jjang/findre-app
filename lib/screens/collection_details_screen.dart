@@ -211,7 +211,7 @@ class _CollectionDetailsScreenState extends State<CollectionDetailsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '\$${property.price.toStringAsFixed(0)}',
+                              '₱${property.price.toStringAsFixed(0)}',
                               style: const TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
