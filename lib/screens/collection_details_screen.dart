@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/property.dart';
 import '../services/favorites_service.dart';
+import '../services/firestore_service.dart';
 
 class CollectionDetailsScreen extends StatefulWidget {
   final String title;
@@ -23,10 +24,39 @@ class _CollectionDetailsScreenState extends State<CollectionDetailsScreen> {
   void initState() {
     super.initState();
     _properties = List.from(widget.properties);
+    // Ensure properties are loaded with latest data from Firestore
+    _refreshPropertiesFromFirestore();
+  }
+  
+  // Refresh properties with latest data from Firestore
+  Future<void> _refreshPropertiesFromFirestore() async {
+    try {
+      final firestoreService = FirestoreService();
+      List<Property> updatedProperties = [];
+      
+      // Get updated data for each property
+      for (var property in _properties) {
+        final updatedProperty = await firestoreService.getProperty(property.id);
+        if (updatedProperty != null) {
+          updatedProperties.add(updatedProperty);
+        } else {
+          // Keep original if not found in Firestore
+          updatedProperties.add(property);
+        }
+      }
+      
+      if (mounted) {
+        setState(() {
+          _properties = updatedProperties;
+        });
+      }
+    } catch (e) {
+      print('Error refreshing properties from Firestore: $e');
+    }
   }
 
   Future<void> _toggleFavorite(Property property) async {
-    // Toggle favorite status
+    // Toggle favorite status in both local storage and Firestore
     await FavoritesService.toggleFavorite(property);
     
     // Update UI
@@ -109,6 +139,21 @@ class _CollectionDetailsScreenState extends State<CollectionDetailsScreen> {
                               height: 200,
                               width: double.infinity,
                               fit: BoxFit.cover,
+                              loadingBuilder: (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return Container(
+                                  height: 200,
+                                  color: Colors.grey[200],
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      value: loadingProgress.expectedTotalBytes != null
+                                          ? loadingProgress.cumulativeBytesLoaded / 
+                                            (loadingProgress.expectedTotalBytes ?? 1)
+                                          : null,
+                                    ),
+                                  ),
+                                );
+                              },
                               errorBuilder: (context, error, stackTrace) => Container(
                                 height: 200,
                                 color: Colors.grey[300],
@@ -189,6 +234,8 @@ class _CollectionDetailsScreenState extends State<CollectionDetailsScreen> {
                             Text(
                               '${property.address}, ${property.city}, ${property.state} ${property.zipCode}',
                               style: const TextStyle(fontSize: 16),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 2,
                             ),
                             const SizedBox(height: 8),
                             Text(
@@ -197,6 +244,7 @@ class _CollectionDetailsScreenState extends State<CollectionDetailsScreen> {
                                 fontSize: 14,
                                 color: Colors.grey[600],
                               ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
