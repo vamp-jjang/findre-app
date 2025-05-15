@@ -772,28 +772,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
               ),
             ),
-
-          // Save Button (only show in map view)
           if (!_isListView)
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 80,
-              right: 16,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  
-                },
-                icon: const Icon(Icons.favorite_border),
-                label: const Text('Save'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-              ),
-            ),
-
           // List View Toggle Button
           Positioned(
             bottom: 16,

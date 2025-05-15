@@ -154,7 +154,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             // Language
             ListTile(
               leading: const Icon(Icons.language_outlined),
-              title: const Text('Language'),
+              title: const Text('English'),
               onTap: (){},
             ),
             const Divider(height: 1),
