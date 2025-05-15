@@ -8,6 +8,7 @@ import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:http/http.dart' as http; // Add http package
 import 'dart:convert'; // Add dart:convert for jsonDecode
 import 'dart:async'; // Add for StreamSubscription
+import 'dart:ui' as ui; // Add for PictureRecorder and Image
 import './place_search_screen.dart'; // Import the new screen
 import '../models/property.dart'; // Import the property model
 import '../services/favorites_service.dart'; // Import favorites service
@@ -36,6 +37,15 @@ class _SearchScreenState extends State<SearchScreen> {
   directions_api.DirectionsService? _directionsService;
   PolylinePoints _polylinePoints = PolylinePoints();
   
+  // List of property locations with their prices
+  final List<Map<String, dynamic>> _propertyLocations = [
+    {'position': LatLng(9.641313657391187, 123.88062357861067), 'price': 199900},
+    {'position': LatLng(9.646976145946546, 123.8694971664606), 'price': 169000},
+    {'position': LatLng(9.674034604353054, 123.87699593290279), 'price': 225000},
+    {'position': LatLng(9.654966026959377, 123.84926638541329), 'price': 189500},
+    {'position': LatLng(9.604226593474564, 123.82824421102796), 'price': 210000},
+  ];
+  
   // Firestore service instance
   final FirestoreService _firestoreService = FirestoreService();
   
@@ -48,6 +58,10 @@ class _SearchScreenState extends State<SearchScreen> {
     super.initState();
     _requestLocationPermission();
     _loadProperties();
+    // Add custom property markers after a short delay to ensure map is loaded
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _addCustomPropertyMarkers();
+    });
     
     if (GOOGLE_MAPS_API_KEY == "YOUR_GOOGLE_MAPS_API_KEY") {
       // Show a dialog or toast to remind the user to add their API key
@@ -429,9 +443,50 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   static const CameraPosition _initialPosition = CameraPosition(
-    target: LatLng(9.814062304659195, 124.1764920905616), // Default to Carmen, Bohol coordinates
-    zoom: 14,
+    target: LatLng(9.641313657391187, 123.88062357861067), // Updated to center on first property location
+    zoom: 12,
   );
+  
+  // Method to add custom bubble markers for properties
+  void _addCustomPropertyMarkers() {
+    for (int i = 0; i < _propertyLocations.length; i++) {
+      final location = _propertyLocations[i];
+      final price = location['price'];
+      final formattedPrice = '₱${price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => "${m[1]},")}K';
+      
+      // Add marker with InfoWindow to display price
+      final marker = Marker(
+        markerId: MarkerId('property_$i'),
+        position: location['position'],
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan),
+        infoWindow: InfoWindow(
+          title: formattedPrice,
+          snippet: 'Property details',
+        ),
+      );
+      
+      setState(() {
+        _markers.add(marker);
+      });
+    }
+  }
+  
+  // Show all InfoWindows when map is ready
+  void _showAllInfoWindows() {
+    if (_mapController != null) {
+      // Trigger showing all InfoWindows by tapping each marker programmatically
+      for (int i = 0; i < _propertyLocations.length; i++) {
+        _mapController!.showMarkerInfoWindow(MarkerId('property_$i'));
+      }
+    }
+  }
+  
+  // Create custom marker bitmap with price bubble
+  Future<BitmapDescriptor> _createCustomMarkerBitmap(String price) async {
+    // For Windows platform, we'll use a simpler approach with BitmapDescriptor.defaultMarker
+    // This ensures compatibility across platforms
+    return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan);
+  }
 
   // Property card widget for list view
   Widget _buildPropertyCard(Property property) {
@@ -687,6 +742,11 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                   );
                 }
+                
+                // Show all property price bubbles after a short delay
+                Future.delayed(const Duration(milliseconds: 1000), () {
+                  _showAllInfoWindows();
+                });
               },
               myLocationButtonEnabled: true,
               myLocationEnabled: true,
