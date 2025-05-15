@@ -7,9 +7,11 @@ import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 // import 'package:google_maps_webservice/places.dart' as P; // Remove this line
 import 'package:http/http.dart' as http; // Add http package
 import 'dart:convert'; // Add dart:convert for jsonDecode
+import 'dart:async'; // Add for StreamSubscription
 import './place_search_screen.dart'; // Import the new screen
 import '../models/property.dart'; // Import the property model
 import '../services/favorites_service.dart'; // Import favorites service
+import '../services/firestore_service.dart'; // Import Firestore service
 // For decoding polyline
 
 
@@ -33,11 +35,20 @@ class _SearchScreenState extends State<SearchScreen> {
   final _polylineId = const PolylineId('route');
   directions_api.DirectionsService? _directionsService;
   PolylinePoints _polylinePoints = PolylinePoints();
+  
+  // Firestore service instance
+  final FirestoreService _firestoreService = FirestoreService();
+  
+  // Properties list
+  List<Property> _properties = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _requestLocationPermission();
+    _loadProperties();
+    
     if (GOOGLE_MAPS_API_KEY == "YOUR_GOOGLE_MAPS_API_KEY") {
       // Show a dialog or toast to remind the user to add their API key
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -61,6 +72,45 @@ class _SearchScreenState extends State<SearchScreen> {
       directions_api.DirectionsService.init(GOOGLE_MAPS_API_KEY);
       _directionsService = directions_api.DirectionsService();
       // _placesApi = P.GoogleMapsPlaces(apiKey: GOOGLE_MAPS_API_KEY); // Remove this line
+    }
+  }
+  
+  // Load properties from Firestore
+  Future<void> _loadProperties() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+    });
+    
+    try {
+      // Get properties from Firestore
+      final properties = await _firestoreService.getProperties();
+      
+      // If no properties in Firestore, add mock data
+      if (properties.isEmpty) {
+        await _firestoreService.addMockPropertiesToFirestore(getMockProperties());
+        // Fetch again after adding mock data
+        final updatedProperties = await _firestoreService.getProperties();
+        if (!mounted) return;
+        setState(() {
+          _properties = updatedProperties;
+          _isLoading = false;
+        });
+      } else {
+        if (!mounted) return;
+        setState(() {
+          _properties = properties;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading properties: $e');
+      // Fallback to mock data if Firestore fails
+      if (!mounted) return;
+      setState(() {
+        _properties = getMockProperties();
+        _isLoading = false;
+      });
     }
   }
 
@@ -162,17 +212,30 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
+  // Location stream subscription
+  StreamSubscription<Position>? _positionStreamSubscription;
+
   void _startLocationUpdates() {
-    Geolocator.getPositionStream().listen((Position position) {
+    _positionStreamSubscription = Geolocator.getPositionStream().listen((Position position) {
+      if (!mounted) return;
       setState(() {
         _currentPosition = position;
         _updateMarker();
       });
     });
   }
+  
+  @override
+  void dispose() {
+    // Cancel location updates subscription
+    _positionStreamSubscription?.cancel();
+    // Dispose map controller
+    _mapController?.dispose();
+    super.dispose();
+  }
 
   void _updateMarker() {
-    if (_currentPosition != null) {
+    if (_currentPosition != null && mounted) {
       final marker = Marker(
         markerId: _markerId,
         position: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
@@ -411,18 +474,21 @@ class _SearchScreenState extends State<SearchScreen> {
                       size: 20,
                     ),
                     onPressed: () async {
-                      // Toggle favorite status using FavoritesService
+                      // Toggle favorite status
                       final updatedProperty = property.copyWith(isFavorite: !property.isFavorite);
                       
-                      // Save to favorites service
+                      // Update in Firestore
+                      await _firestoreService.updateFavoriteStatus(property.id, updatedProperty.isFavorite);
+                      
+                      // Also save to local favorites service for offline access
                       await FavoritesService.toggleFavorite(updatedProperty);
                       
-                      // Update the property in the mock data for UI update
+                      // Update the UI
                       setState(() {
-                        // Find the property in the mock data and update it
-                        final index = getMockProperties().indexWhere((p) => p.id == property.id);
+                        // Find and update the property in the list
+                        final index = _properties.indexWhere((p) => p.id == property.id);
                         if (index != -1) {
-                          getMockProperties()[index] = updatedProperty;
+                          _properties[index] = updatedProperty;
                         }
                       });
                       
@@ -506,8 +572,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Get mock property data
-    final properties = getMockProperties();
+    // Use properties loaded from Firestore
     
     return Scaffold(
       body: Stack(
@@ -582,7 +647,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           style: TextStyle(fontSize: 16, color: Colors.grey[700]),
                         ),
                         Text(
-                          '${properties.length} Results',
+                          '${_properties.length} Results',
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -591,11 +656,13 @@ class _SearchScreenState extends State<SearchScreen> {
                   const SizedBox(height: 8),
                   // Property listings
                   Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.only(bottom: 80), // Add padding for FAB
-                      itemCount: properties.length,
-                      itemBuilder: (context, index) => _buildPropertyCard(properties[index]),
-                    ),
+                    child: _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : ListView.builder(
+                          padding: const EdgeInsets.only(bottom: 80), // Add padding for FAB
+                          itemCount: _properties.length,
+                          itemBuilder: (context, index) => _buildPropertyCard(_properties[index]),
+                        ),
                   ),
                 ],
               ),
@@ -712,7 +779,9 @@ class _SearchScreenState extends State<SearchScreen> {
               top: MediaQuery.of(context).padding.top + 80,
               right: 16,
               child: ElevatedButton.icon(
-                onPressed: () {},
+                onPressed: () {
+                  
+                },
                 icon: const Icon(Icons.favorite_border),
                 label: const Text('Save'),
                 style: ElevatedButton.styleFrom(

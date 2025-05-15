@@ -52,6 +52,40 @@ class Property {
       listingCourtesy: listingCourtesy ?? this.listingCourtesy,
     );
   }
+  
+  // Convert Property object to a Map for Firestore
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'address': address,
+      'city': city,
+      'state': state,
+      'zipCode': zipCode,
+      'price': price,
+      'squareFeet': squareFeet,
+      'acres': acres,
+      'imageUrl': imageUrl,
+      'isFavorite': isFavorite,
+      'listingCourtesy': listingCourtesy,
+    };
+  }
+  
+  // Create a Property object from a Firestore document
+  factory Property.fromMap(Map<String, dynamic> map) {
+    return Property(
+      id: map['id'] ?? '',
+      address: map['address'] ?? '',
+      city: map['city'] ?? '',
+      state: map['state'] ?? '',
+      zipCode: map['zipCode'] ?? '',
+      price: (map['price'] ?? 0).toDouble(),
+      squareFeet: (map['squareFeet'] ?? 0).toDouble(),
+      acres: (map['acres'] ?? 0).toDouble(),
+      imageUrl: map['imageUrl'] ?? '',
+      isFavorite: map['isFavorite'] ?? false,
+      listingCourtesy: map['listingCourtesy'] ?? '',
+    );
+  }
 }
 
 // Mock data for property listings

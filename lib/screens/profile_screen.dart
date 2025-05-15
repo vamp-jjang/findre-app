@@ -155,12 +155,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ListTile(
               leading: const Icon(Icons.language_outlined),
               title: const Text('Language'),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const FindAgentScreen(),
-                ),
-              ),
+              onTap: (){},
             ),
             const Divider(height: 1),
           ],

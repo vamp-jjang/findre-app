@@ -1,6 +1,8 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/property.dart';
+import 'firestore_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FavoritesService {
   static const String _favoritesKey = 'favorites';
@@ -56,11 +58,30 @@ class FavoritesService {
 
   // Toggle favorite status
   static Future<bool> toggleFavorite(Property property) async {
-    if (_favorites.any((p) => p.id == property.id)) {
-      return await removeFavorite(property.id);
+    // Update in local storage
+    bool localResult;
+    if (property.isFavorite) {
+      localResult = await addFavorite(property);
     } else {
-      return await addFavorite(property.copyWith(isFavorite: true));
+      localResult = await removeFavorite(property.id);
     }
+    
+    // Also update in Firestore if local update was successful
+    if (localResult) {
+      try {
+        // Update in Firestore
+        await FirebaseFirestore.instance
+            .collection('properties')
+            .doc(property.id)
+            .update({'isFavorite': property.isFavorite});
+      } catch (e) {
+        print('Error updating favorite status in Firestore: $e');
+        // Continue even if Firestore update fails
+        // Local changes are still saved
+      }
+    }
+    
+    return localResult;
   }
 
   // Check if a property is in favorites
