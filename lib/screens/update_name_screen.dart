@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:real_estate/auth_services.dart';
 
 class UpdateNameScreen extends StatefulWidget {

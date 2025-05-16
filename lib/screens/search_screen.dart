@@ -8,10 +8,9 @@ import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:http/http.dart' as http; // Add http package
 import 'dart:convert'; // Add dart:convert for jsonDecode
 import 'dart:async'; // Add for StreamSubscription
-import 'dart:ui' as ui; // Add for PictureRecorder and Image
-import 'package:flutter/scheduler.dart'; // For AppLifecycleState
 import '../utils/lifecycle_handler.dart'; // Import lifecycle handler
 import './place_search_screen.dart'; // Import the new screen
+import './filter_screen.dart'; // Import the filter screen
 import '../models/property.dart'; // Import the property model
 import '../services/favorites_service.dart'; // Import favorites service
 import '../services/firestore_service.dart'; // Import Firestore service
@@ -46,7 +45,11 @@ class _SearchScreenState extends State<SearchScreen> {
   
   // Properties list
   List<Property> _properties = [];
+  List<Property> _filteredProperties = [];
   bool _isLoading = true;
+  
+  // Filter values
+  RangeValues? _priceRangeFilter;
 
   @override
   void initState() {
@@ -102,6 +105,14 @@ class _SearchScreenState extends State<SearchScreen> {
       if (!mounted) return;
       setState(() {
         _properties = properties;
+        
+        // If no filters are applied, update filtered properties as well
+        if (_priceRangeFilter == null) {
+          _filteredProperties = properties;
+        } else {
+          // Re-apply existing filters to the updated properties
+          _applyFilters();
+        }
       });
       
       // Update markers with new property data
@@ -141,6 +152,7 @@ class _SearchScreenState extends State<SearchScreen> {
         if (!mounted) return;
         setState(() {
           _properties = updatedProperties;
+          _filteredProperties = updatedProperties; // Initialize filtered properties with all properties
           _isLoading = false;
         });
         // Add markers for properties
@@ -149,6 +161,7 @@ class _SearchScreenState extends State<SearchScreen> {
         if (!mounted) return;
         setState(() {
           _properties = properties;
+          _filteredProperties = properties; // Initialize filtered properties with all properties
           _isLoading = false;
         });
         // Add markers for properties
@@ -160,6 +173,7 @@ class _SearchScreenState extends State<SearchScreen> {
       if (!mounted) return;
       setState(() {
         _properties = getMockProperties();
+        _filteredProperties = _properties; // Initialize filtered properties with all properties
         _isLoading = false;
       });
       // Add markers for properties
@@ -559,11 +573,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
   
   // Create custom marker bitmap with price bubble
-  Future<BitmapDescriptor> _createCustomMarkerBitmap(String price) async {
-    // For Windows platform, we'll use a simpler approach with BitmapDescriptor.defaultMarker
-    // This ensures compatibility across platforms
-    return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan);
-  }
+
 
   // Property card widget for list view
   Widget _buildPropertyCard(Property property) {
@@ -596,48 +606,67 @@ class _SearchScreenState extends State<SearchScreen> {
               Positioned(
                 top: 8,
                 right: 8,
-                child: CircleAvatar(
-                  backgroundColor: Colors.white,
-                  radius: 18,
-                  child: IconButton(
-                    icon: Icon(
-                      property.isFavorite ? Icons.favorite : Icons.favorite_border,
-                      color: property.isFavorite ? Colors.red : Colors.black,
-                      size: 20,
-                    ),
-                    onPressed: () async {
-                      // Toggle favorite status
-                      final updatedProperty = property.copyWith(isFavorite: !property.isFavorite);
-                      
-                      // Update in Firestore
-                      await _firestoreService.updateFavoriteStatus(property.id, updatedProperty.isFavorite);
-                      
-                      // Also save to local favorites service for offline access
-                      await FavoritesService.toggleFavorite(updatedProperty);
-                      
-                      // Update the UI
-                      setState(() {
-                        // Find and update the property in the list
-                        final index = _properties.indexWhere((p) => p.id == property.id);
-                        if (index != -1) {
-                          _properties[index] = updatedProperty;
-                        }
-                      });
-                      
-                      // Show a snackbar to confirm the action
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            updatedProperty.isFavorite 
-                              ? 'Added to favorites' 
-                              : 'Removed from favorites',
-                          ),
-                          duration: const Duration(seconds: 2),
+                child: Row(
+                  children: [
+                    // Filter button
+                    CircleAvatar(
+                      backgroundColor: Colors.white,
+                      radius: 18,
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.tune,
+                          color: Colors.black,
+                          size: 20,
                         ),
-                      );
-                    },
-                  ),
+                        onPressed: () => _showFilterScreen(),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Favorite button
+                    CircleAvatar(
+                      backgroundColor: Colors.white,
+                      radius: 18,
+                      child: IconButton(
+                        icon: Icon(
+                          property.isFavorite ? Icons.favorite : Icons.favorite_border,
+                          color: property.isFavorite ? Colors.red : Colors.black,
+                          size: 20,
+                        ),
+                        onPressed: () async {
+                          // Toggle favorite status
+                          final updatedProperty = property.copyWith(isFavorite: !property.isFavorite);
+                          
+                          // Update in Firestore
+                          await _firestoreService.updateFavoriteStatus(property.id, updatedProperty.isFavorite);
+                          
+                          // Also save to local favorites service for offline access
+                          await FavoritesService.toggleFavorite(updatedProperty);
+                          
+                          // Update the UI
+                          setState(() {
+                            // Find and update the property in the list
+                            final index = _properties.indexWhere((p) => p.id == property.id);
+                            if (index != -1) {
+                              _properties[index] = updatedProperty;
+                            }
+                          });
+                          
+                          // Show a snackbar to confirm the action
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                updatedProperty.isFavorite 
+                                  ? 'Added to favorites' 
+                                  : 'Removed from favorites',
+                              ),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
               // Image pagination dots
@@ -701,6 +730,50 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
     );
   }
+  
+  // Apply filters to properties
+  void _applyFilters() {
+    if (_priceRangeFilter == null) {
+      // When no filters are applied, show all properties
+      setState(() {
+        _filteredProperties = _properties;
+      });
+      _addCustomPropertyMarkers();
+      return;
+    }
+    
+    setState(() {
+      _filteredProperties = _properties.where((property) {
+        // Apply price filter
+        final bool matchesPrice = property.price >= _priceRangeFilter!.start && 
+                                 property.price <= _priceRangeFilter!.end;
+        return matchesPrice;
+      }).toList();
+    });
+    
+    // Update markers with filtered properties
+    _addCustomPropertyMarkers();
+  }
+  
+  // Show filter screen
+  Future<void> _showFilterScreen() async {
+    final result = await Navigator.push<RangeValues>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FilterScreen(currentPriceRange: _priceRangeFilter),
+      ),
+    );
+    
+    if (result != null) {
+      setState(() {
+        _priceRangeFilter = result;
+      });
+      _applyFilters();
+    } else {
+      // If user cancels without saving, keep showing all properties
+      // No need to do anything as we maintain the current state
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -759,9 +832,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             ),
                             child: IconButton(
                               icon: const Icon(Icons.tune),
-                              onPressed: () {
-                                // Show filters dialog
-                              },
+                              onPressed: () => _showFilterScreen(),
                             ),
                           ),
                         ],
@@ -774,12 +845,47 @@ class _SearchScreenState extends State<SearchScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'All Results',
-                          style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                        Row(
+                          children: [
+                            Text(
+                              _priceRangeFilter == null ? 'All Properties' : 'Filtered Results',
+                              style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                            ),
+                            if (_priceRangeFilter != null)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 8.0),
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _priceRangeFilter = null;
+                                      _filteredProperties = _properties;
+                                    });
+                                    _addCustomPropertyMarkers();
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red[400],
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: const [
+                                        Text(
+                                          'Clear Filters',
+                                          style: TextStyle(color: Colors.white, fontSize: 12),
+                                        ),
+                                        SizedBox(width: 4),
+                                        Icon(Icons.close, color: Colors.white, size: 12),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                         Text(
-                          '${_properties.length} Results',
+                          '${_filteredProperties.length} Results',
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -792,8 +898,8 @@ class _SearchScreenState extends State<SearchScreen> {
                       ? const Center(child: CircularProgressIndicator())
                       : ListView.builder(
                           padding: const EdgeInsets.only(bottom: 80), // Add padding for FAB
-                          itemCount: _properties.length,
-                          itemBuilder: (context, index) => _buildPropertyCard(_properties[index]),
+                          itemCount: _filteredProperties.length,
+                          itemBuilder: (context, index) => _buildPropertyCard(_filteredProperties[index]),
                         ),
                   ),
                 ],

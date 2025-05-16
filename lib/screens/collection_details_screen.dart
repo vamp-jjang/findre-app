@@ -58,7 +58,6 @@ class _CollectionDetailsScreenState extends State<CollectionDetailsScreen> {
 
   Future<void> _toggleFavorite(Property property) async {
     // Create updated property with toggled favorite status
-    final updatedProperty = property.copyWith(isFavorite: false); // Always set to false when removing from favorites
     
     // Update in Firestore first
     await _firestoreService.updateFavoriteStatus(property.id, false);

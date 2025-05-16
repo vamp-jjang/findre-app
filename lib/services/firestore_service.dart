@@ -104,6 +104,28 @@ class FirestoreService {
     }
   }
   
+  // Get properties filtered by price range
+  Future<List<Property>> getPropertiesByPriceRange(double minPrice, double maxPrice) async {
+    try {
+      final QuerySnapshot snapshot = await _propertiesCollection
+          .where('price', isGreaterThanOrEqualTo: minPrice)
+          .where('price', isLessThanOrEqualTo: maxPrice)
+          .get();
+      
+      return snapshot.docs.map((doc) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        // If the document doesn't have an id field, use the document ID
+        if (!data.containsKey('id')) {
+          data['id'] = doc.id;
+        }
+        return Property.fromMap(data);
+      }).toList();
+    } catch (e) {
+      print('Error getting properties by price range: $e');
+      return [];
+    }
+  }
+  
   // Add mock properties to Firestore (for initial setup)
   Future<void> addMockPropertiesToFirestore(List<Property> properties) async {
     try {

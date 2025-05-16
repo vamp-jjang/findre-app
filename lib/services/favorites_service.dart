@@ -1,7 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/property.dart';
-import 'firestore_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FavoritesService {
